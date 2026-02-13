@@ -29,3 +29,5 @@ dist-ssr
 
 # Figma export reference (not needed in production)
 .figma-export
+.vercel
+.env*.local

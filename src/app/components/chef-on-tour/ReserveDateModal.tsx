@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { supabase } from '../../../lib/supabase';
 
 interface ReserveDateModalProps {
   isOpen: boolean;
@@ -26,9 +27,9 @@ type Question = {
   question: string;
   field: keyof FormData;
 } & (
-  | { type: 'dropdown'; options: string[] }
-  | { type: 'text' | 'email' | 'phone'; placeholder: string }
-);
+    | { type: 'dropdown'; options: string[] }
+    | { type: 'text' | 'email' | 'phone'; placeholder: string }
+  );
 
 // Questions starting from step 2 (skipping the destination question)
 const questions: Question[] = [
@@ -117,6 +118,8 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
     scheduleCall: '',
     comments: ''
   });
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -124,10 +127,10 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
 
   const currentQuestion = questions[currentStep];
   const currentValue = formData[currentQuestion.field];
-  
+
   // Check if this is the final step (step 9, but index 7 in our array since we start from step 2)
   const isFinalStep = currentStep === questions.length - 1;
-  
+
   // Build Calendly URL with prefilled parameters
   const calendlyUrl = `https://calendly.com/chefontour?hide_landing_page_details=1&hide_gdpr_banner=1&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}&email=${encodeURIComponent(formData.email)}`;
 
@@ -148,17 +151,50 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
     };
   }, [isOpen, showCalendlyModal]);
 
+  const handleSubmitLead = useCallback(async () => {
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const leadType = formData.experienceType === 'Team / Incentive Experience' ? 'Company' : 'Individual';
+
+    const { error } = await supabase.from('leads').insert({
+      lead_type: leadType,
+      status: 'new',
+      details: {
+        tour_title: tourTitle,
+        start_date: startDate,
+        end_date: endDate,
+        experience_type: formData.experienceType,
+        group_size: formData.groupSize,
+        first_name: formData.firstName,
+        last_name: formData.lastName,
+        email: formData.email,
+        phone: formData.phone,
+        schedule_call: formData.scheduleCall,
+        comments: formData.comments,
+      }
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      console.error('Lead submission error:', error);
+      setSubmitStatus('error');
+    } else {
+      setSubmitStatus('success');
+    }
+  }, [formData, tourTitle, startDate, endDate]);
+
   const handleNext = useCallback(() => {
     if (currentStep < questions.length - 1) {
       setDirection(1);
       setIsDropdownOpen(false);
       setCurrentStep(currentStep + 1);
     } else {
-      // All steps completed
-      console.log('Reserve form completed', { ...formData, tourTitle, startDate, endDate });
-      onClose();
+      // All steps completed — submit lead
+      handleSubmitLead();
     }
-  }, [currentStep, formData, onClose, tourTitle, startDate, endDate]);
+  }, [currentStep, handleSubmitLead]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 0) {
@@ -171,7 +207,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen || showCalendlyModal) return;
-      
+
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'Enter' && currentValue && !isDropdownOpen) {
@@ -188,19 +224,19 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, currentValue, handleNext, handlePrevious, onClose, showCalendlyModal, isDropdownOpen]);
-  
+
   // Load Calendly script when showCalendlyModal becomes true
   useEffect(() => {
     if (showCalendlyModal) {
       const existingScript = document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]');
-      
+
       if (!existingScript) {
         const script = document.createElement('script');
         script.src = 'https://assets.calendly.com/assets/external/widget.js';
         script.type = 'text/javascript';
         script.async = true;
         document.body.appendChild(script);
-        
+
         return () => {
           if (document.body.contains(script)) {
             document.body.removeChild(script);
@@ -241,7 +277,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
           inputRef.current.focus();
         }
       }, 600);
-      
+
       return () => clearTimeout(timer);
     }
   }, [currentStep, isOpen, currentQuestion.type, isFinalStep]);
@@ -252,11 +288,11 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
       [currentQuestion.field]: option
     });
     setIsDropdownOpen(false);
-    
+
     // Check if this is step 8 (index 6 in our array) and user selected "Yes, schedule a call"
     const isStep8 = currentStep === 6;
     const wantsToSchedule = option === "Yes, schedule a call";
-    
+
     // If it's step 8 and user wants to schedule, show Calendly modal
     if (isStep8 && wantsToSchedule) {
       setTimeout(() => {
@@ -264,7 +300,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
       }, 300);
       return;
     }
-    
+
     // For all other cases, auto-advance after short delay
     setTimeout(() => {
       handleNext();
@@ -303,7 +339,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
   if (!isOpen) return null;
 
   const isTextInput = currentQuestion.type !== 'dropdown';
-  
+
   return (
     <>
       <AnimatePresence>
@@ -420,7 +456,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
                             ref={inputRef}
                           />
                         )}
-                        
+
                         {/* OK Button */}
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
@@ -430,16 +466,15 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
                         >
                           <motion.button
                             onClick={handleNext}
-                            disabled={!isFinalStep && !currentValue}
-                            className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${
-                              (!isFinalStep && !currentValue)
-                                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                                : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
-                            }`}
-                            whileHover={(!isFinalStep && !currentValue) ? {} : { scale: 1.02 }}
-                            whileTap={(!isFinalStep && !currentValue) ? {} : { scale: 0.98 }}
+                            disabled={(!isFinalStep && !currentValue) || isSubmitting || submitStatus === 'success'}
+                            className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${((!isFinalStep && !currentValue) || isSubmitting || submitStatus === 'success')
+                              ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                              : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
+                              }`}
+                            whileHover={((!isFinalStep && !currentValue) || isSubmitting) ? {} : { scale: 1.02 }}
+                            whileTap={((!isFinalStep && !currentValue) || isSubmitting) ? {} : { scale: 0.98 }}
                           >
-                            {isFinalStep ? 'Submit Request' : 'OK'}
+                            {isSubmitting ? 'Submitting...' : isFinalStep ? 'Submit Request' : 'OK'}
                           </motion.button>
                           {!isFinalStep && (
                             <span className="text-[#D4A574]/40 text-xs sm:text-sm hidden sm:inline">
@@ -449,7 +484,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
                         </motion.div>
 
                         {/* Final Step Message */}
-                        {isFinalStep && (
+                        {isFinalStep && submitStatus === 'idle' && !isSubmitting && (
                           <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -464,6 +499,72 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
                             </p>
                           </motion.div>
                         )}
+
+                        {/* Submitting State */}
+                        {isSubmitting && (
+                          <motion.div
+                            initial={{ opacity: 0 }}
+                            animate={{ opacity: 1 }}
+                            className="mt-8 sm:mt-12 flex items-center gap-3"
+                          >
+                            <Loader2 className="h-5 w-5 text-[#D4A574] animate-spin" />
+                            <p className="text-[#D4A574]/90 text-base sm:text-lg">Preparing your request...</p>
+                          </motion.div>
+                        )}
+
+                        {/* Success State */}
+                        {submitStatus === 'success' && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-8 sm:mt-12 space-y-4"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-green-500/20 flex items-center justify-center">
+                                <Check className="h-5 w-5 text-green-400" />
+                              </div>
+                              <div>
+                                <p className="text-[#D4A574] text-lg font-medium">Your table is set! 🍽️</p>
+                                <p className="text-[#D4A574]/70 text-sm">We'll be in touch shortly to craft your experience.</p>
+                              </div>
+                            </div>
+                            <motion.button
+                              onClick={onClose}
+                              className="mt-4 px-6 py-2.5 rounded-lg bg-[#D4A574] text-[#3a4157] text-sm font-medium hover:bg-[#C19563] transition-all"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Close
+                            </motion.button>
+                          </motion.div>
+                        )}
+
+                        {/* Error State */}
+                        {submitStatus === 'error' && (
+                          <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            className="mt-8 sm:mt-12 space-y-4"
+                          >
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center">
+                                <AlertCircle className="h-5 w-5 text-red-400" />
+                              </div>
+                              <div>
+                                <p className="text-[#D4A574] text-lg font-medium">Something went wrong</p>
+                                <p className="text-[#D4A574]/70 text-sm">Please try again or contact us directly.</p>
+                              </div>
+                            </div>
+                            <motion.button
+                              onClick={() => { setSubmitStatus('idle'); handleSubmitLead(); }}
+                              className="mt-4 px-6 py-2.5 rounded-lg bg-[#D4A574] text-[#3a4157] text-sm font-medium hover:bg-[#C19563] transition-all"
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              Try Again
+                            </motion.button>
+                          </motion.div>
+                        )}
                       </div>
                     ) : (
                       // Dropdown
@@ -476,9 +577,8 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
                             {currentValue || 'Type or select an option'}
                           </span>
                           <ChevronUp
-                            className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${
-                              isDropdownOpen ? 'rotate-180' : ''
-                            }`}
+                            className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${isDropdownOpen ? 'rotate-180' : ''
+                              }`}
                           />
                         </button>
 
@@ -525,11 +625,10 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
             <button
               onClick={handlePrevious}
               disabled={currentStep === 0}
-              className={`p-2 sm:p-3 rounded-lg transition-all ${
-                currentStep === 0
-                  ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                  : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-              }`}
+              className={`p-2 sm:p-3 rounded-lg transition-all ${currentStep === 0
+                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+                }`}
               aria-label="Previous question"
             >
               <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -537,11 +636,10 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
             <button
               onClick={handleNext}
               disabled={!currentValue}
-              className={`p-2 sm:p-3 rounded-lg transition-all ${
-                !currentValue
-                  ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                  : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-              }`}
+              className={`p-2 sm:p-3 rounded-lg transition-all ${!currentValue
+                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+                }`}
               aria-label="Next question"
             >
               <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
