@@ -5,7 +5,7 @@ import logo from '@/assets/63a59453823c55a03703a64e2bd861fe4dd295a2.png';
 
 export function LoginPage() {
     const [searchParams] = useSearchParams();
-    const redirectTo = searchParams.get('redirect') || '/';
+    const redirectTo = searchParams.get('redirect') || '/account';
 
     return (
         <div className="flex min-h-screen flex-col items-center justify-center bg-[#111] p-4">
