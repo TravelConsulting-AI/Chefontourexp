@@ -735,8 +735,8 @@ export function LeadDrawer({
                 )}
             </div>
 
-            {/* ── Delete Lead (superadmin only) ── */}
-            {role === 'superadmin' && onDelete && (
+            {/* ── Delete Lead (superadmin only, edit mode only) ── */}
+            {isEditing && role === 'superadmin' && onDelete && (
                 <div className="border-t border-black/5 px-6 py-4">
                     {!isConfirmingDelete ? (
                         <button
