@@ -76,7 +76,7 @@ export function ChefFooter() {
               </li>
               <li>
                 <a
-                  href="/admin/login"
+                  href="/admin"
                   target="_blank"
                   rel="noopener noreferrer"
                   className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
