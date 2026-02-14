@@ -182,6 +182,13 @@ export function AuthCard({ defaultView = 'signin', redirectTo = '/' }: AuthCardP
                                 >
                                     Forgot password?
                                 </Link>
+
+                                <Link
+                                    to="/admin"
+                                    className="block w-full text-center text-xs text-white/25 transition-colors hover:text-white/50"
+                                >
+                                    Team Login
+                                </Link>
                             </motion.form>
                         )}
 
