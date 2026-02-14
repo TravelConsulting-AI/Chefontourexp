@@ -24,7 +24,7 @@ export const tours = [
     description: 'Explore Barcelona\'s vibrant culinary scene from traditional tapas bars to avant-garde restaurants.',
     duration: '6 Days / 5 Nights',
     image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/tours',
+    link: '/experiences/barcelona',
     published: false
   },
   {
@@ -36,7 +36,7 @@ export const tours = [
     description: 'Experience Medellín\'s transformation through its food, culture, and the warmth of paisa hospitality.',
     duration: '7 Days / 6 Nights',
     image: 'https://images.unsplash.com/photo-1568632234157-ce7aecd03d0d?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/medellin-tours',
+    link: '/experiences/medellin',
     published: true
   },
   {
@@ -48,7 +48,7 @@ export const tours = [
     description: 'Dive into the soul of Buenos Aires through legendary steakhouses, milongas, and neighborhood parrillas.',
     duration: '8 Days / 7 Nights',
     image: 'https://images.unsplash.com/photo-1589909202802-8f4aadce1849?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/buenos-aires-tours',
+    link: '/experiences/buenos-aires',
     published: true
   },
   {
@@ -60,19 +60,19 @@ export const tours = [
     description: 'From beachside kiosks to mountain-top vistas, discover the rhythm and soul of Brazil\'s most iconic city.',
     duration: '7 Days / 6 Nights',
     image: 'https://images.unsplash.com/photo-1483729558449-99ef09a8c325?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/rio-tours',
+    link: '/experiences/rio',
     published: true
   },
   {
     id: 'palermo',
     name: 'Palermo',
     country: 'Italy',
-    subtitle: 'Beneath the Sunhine',
+    subtitle: 'Beneath the Sunshine',
     tagline: 'Markets, Street Food & Sicilian Heritage',
     description: 'Wander through ancient markets, taste Arab-Norman fusion, and experience Sicily\'s layered history through food.',
     duration: '6 Days / 5 Nights',
     image: 'https://images.unsplash.com/photo-1696773605964-16f6abbef9de?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/palermo-tours',
+    link: '/experiences/palermo',
     published: true
   },
   {
@@ -84,7 +84,7 @@ export const tours = [
     description: 'Discover Málaga\'s authentic fishing village roots, coastal cuisine, and the sun-soaked flavors of southern Spain.',
     duration: '5 Days / 4 Nights',
     image: 'https://images.unsplash.com/photo-1707919746451-f988b2c632d8?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/malaga-tours',
+    link: '/experiences/malaga',
     published: true
   },
   {
@@ -96,7 +96,7 @@ export const tours = [
     description: 'Journey through Istanbul\'s culinary crossroads where East meets West across the Bosphorus.',
     duration: '7 Days / 6 Nights',
     image: 'https://images.unsplash.com/photo-1659395065151-c181db039a1a?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/istanbul-tours',
+    link: '/experiences/istanbul',
     published: true
   },
   {
@@ -108,7 +108,7 @@ export const tours = [
     description: 'Experience the phoenix city through its legendary hospitality, vibrant mezze culture, and stories of survival.',
     duration: '6 Days / 5 Nights',
     image: 'https://images.unsplash.com/photo-1759403605420-dca1e5c28a48?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
-    link: '/beirut-tours',
+    link: '/experiences/beirut',
     published: true
   }
 ];

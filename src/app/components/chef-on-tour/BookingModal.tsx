@@ -1,6 +1,7 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronUp, ChevronDown } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { insertLead } from '@/lib/insertLead';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -24,9 +25,9 @@ type Question = {
   question: string;
   field: keyof FormData;
 } & (
-  | { type: 'dropdown'; options: string[] }
-  | { type: 'text' | 'email' | 'phone'; placeholder: string }
-);
+    | { type: 'dropdown'; options: string[] }
+    | { type: 'text' | 'email' | 'phone'; placeholder: string }
+  );
 
 const questions: Question[] = [
   {
@@ -134,15 +135,18 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [calendlyEventUrl, setCalendlyEventUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const currentQuestion = questions[currentStep];
   const currentValue = formData[currentQuestion.field];
-  
+
   // Check if this is the final step (step 9, index 8)
   const isFinalStep = currentStep === questions.length - 1;
-  
+
   // Build Calendly URL with prefilled parameters
   const calendlyUrl = `https://calendly.com/chefontour?hide_landing_page_details=1&hide_gdpr_banner=1&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}&email=${encodeURIComponent(formData.email)}`;
 
@@ -157,17 +161,50 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
     };
   }, [isOpen, showCalendlyModal]);
 
+  const handleSubmitLead = useCallback(async () => {
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const { error } = await insertLead({
+      source: 'home',
+      departureType: 'none',
+      tourId: null,
+      fixedDateId: null,
+      customDepartureDate: null,
+      customDepartureDateEnd: null,
+      calendlyLink: calendlyEventUrl,
+      experienceType: formData.experienceType,
+      groupSize: formData.groupSize,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      scheduleCall: formData.scheduleCall === 'Yes, schedule a call',
+      comments: formData.comments,
+      // Pass the selected destination so insertLead can resolve tour_id
+      destinationLabel: formData.destination,
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      console.error('Lead submission error:', error);
+      setSubmitStatus('error');
+    } else {
+      setSubmitStatus('success');
+    }
+  }, [formData, calendlyEventUrl]);
+
   const handleNext = useCallback(() => {
     if (currentStep < questions.length - 1) {
       setDirection(1);
       setIsDropdownOpen(false);
       setCurrentStep(currentStep + 1);
     } else {
-      // All steps completed
-      console.log('Form completed', formData);
-      onClose();
+      // Final step - submit to Supabase
+      handleSubmitLead();
     }
-  }, [currentStep, formData, onClose]);
+  }, [currentStep, handleSubmitLead]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 0) {
@@ -180,7 +217,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen || showCalendlyModal) return;
-      
+
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'Enter' && currentValue && !isDropdownOpen) {
@@ -197,19 +234,19 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, currentValue, handleNext, handlePrevious, onClose, showCalendlyModal, isDropdownOpen]);
-  
+
   // Load Calendly script when showCalendlyModal becomes true
   useEffect(() => {
     if (showCalendlyModal) {
       const existingScript = document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]');
-      
+
       if (!existingScript) {
         const script = document.createElement('script');
         script.src = 'https://assets.calendly.com/assets/external/widget.js';
         script.type = 'text/javascript';
         script.async = true;
         document.body.appendChild(script);
-        
+
         return () => {
           if (document.body.contains(script)) {
             document.body.removeChild(script);
@@ -223,8 +260,10 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   useEffect(() => {
     const handleCalendlyEvent = (e: MessageEvent) => {
       if (e.data.event && e.data.event === 'calendly.event_scheduled') {
-        console.log('Calendly meeting scheduled!', e.data);
-        // Close Calendly modal and advance to step 9
+        // Capture event URI for lead record
+        const uri = e.data.payload?.event?.uri ?? e.data.payload?.invitee?.uri ?? null;
+        if (uri) setCalendlyEventUrl(uri);
+        // Close Calendly modal and advance
         setTimeout(() => {
           setShowCalendlyModal(false);
           handleNext();
@@ -250,7 +289,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
           inputRef.current.focus();
         }
       }, 600);
-      
+
       return () => clearTimeout(timer);
     }
   }, [currentStep, isOpen, currentQuestion.type, isFinalStep]);
@@ -261,11 +300,11 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
       [currentQuestion.field]: option
     });
     setIsDropdownOpen(false);
-    
+
     // Check if this is step 8 (index 7) and user selected "Yes, schedule a call"
     const isStep8 = currentStep === 7;
     const wantsToSchedule = option === "Yes, schedule a call";
-    
+
     // If it's step 8 and user wants to schedule, show Calendly modal
     if (isStep8 && wantsToSchedule) {
       setTimeout(() => {
@@ -273,7 +312,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
       }, 300);
       return;
     }
-    
+
     // For all other cases, auto-advance after short delay
     setTimeout(() => {
       handleNext();
@@ -312,7 +351,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   if (!isOpen) return null;
 
   const isTextInput = currentQuestion.type !== 'dropdown';
-  
+
   return (
     <>
       <AnimatePresence>
@@ -417,7 +456,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                             ref={inputRef}
                           />
                         )}
-                        
+
                         {/* OK Button */}
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
@@ -427,16 +466,20 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                         >
                           <motion.button
                             onClick={handleNext}
-                            disabled={!isFinalStep && !currentValue}
-                            className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${
-                              (!isFinalStep && !currentValue)
-                                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                                : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
-                            }`}
-                            whileHover={(!isFinalStep && !currentValue) ? {} : { scale: 1.02 }}
-                            whileTap={(!isFinalStep && !currentValue) ? {} : { scale: 0.98 }}
+                            disabled={(!isFinalStep && !currentValue) || isSubmitting}
+                            className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${((!isFinalStep && !currentValue) || isSubmitting)
+                              ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                              : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
+                              }`}
+                            whileHover={((!isFinalStep && !currentValue) || isSubmitting) ? {} : { scale: 1.02 }}
+                            whileTap={((!isFinalStep && !currentValue) || isSubmitting) ? {} : { scale: 0.98 }}
                           >
-                            {isFinalStep ? 'Submit Request' : 'OK'}
+                            {isSubmitting ? (
+                              <span className="flex items-center gap-2">
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                                Submitting…
+                              </span>
+                            ) : isFinalStep ? 'Submit Request' : 'OK'}
                           </motion.button>
                           {!isFinalStep && (
                             <span className="text-[#D4A574]/40 text-xs sm:text-sm hidden sm:inline">
@@ -445,8 +488,40 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                           )}
                         </motion.div>
 
-                        {/* Final Step Message */}
-                        {isFinalStep && (
+                        {/* Final Step — Submit Status */}
+                        {isFinalStep && submitStatus === 'success' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="mt-8 sm:mt-12 space-y-2"
+                          >
+                            <div className="flex items-center gap-2 text-emerald-400">
+                              <Check className="h-5 w-5" />
+                              <p className="text-base sm:text-lg font-medium">Request Submitted!</p>
+                            </div>
+                            <p className="text-[#D4A574]/70 text-sm sm:text-base">
+                              We'll be in touch soon.
+                            </p>
+                          </motion.div>
+                        )}
+                        {isFinalStep && submitStatus === 'error' && (
+                          <motion.div
+                            initial={{ opacity: 0, y: 20 }}
+                            animate={{ opacity: 1, y: 0 }}
+                            transition={{ delay: 0.3 }}
+                            className="mt-8 sm:mt-12 space-y-2"
+                          >
+                            <div className="flex items-center gap-2 text-red-400">
+                              <AlertCircle className="h-5 w-5" />
+                              <p className="text-base sm:text-lg font-medium">Something went wrong</p>
+                            </div>
+                            <p className="text-[#D4A574]/70 text-sm sm:text-base">
+                              Please try again or reach out directly.
+                            </p>
+                          </motion.div>
+                        )}
+                        {isFinalStep && submitStatus === 'idle' && !isSubmitting && (
                           <motion.div
                             initial={{ opacity: 0, y: 20 }}
                             animate={{ opacity: 1, y: 0 }}
@@ -473,9 +548,8 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                             {currentValue || 'Type or select an option'}
                           </span>
                           <ChevronUp
-                            className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${
-                              isDropdownOpen ? 'rotate-180' : ''
-                            }`}
+                            className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${isDropdownOpen ? 'rotate-180' : ''
+                              }`}
                           />
                         </button>
 
@@ -522,11 +596,10 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
             <button
               onClick={handlePrevious}
               disabled={currentStep === 0}
-              className={`p-2 sm:p-3 rounded-lg transition-all ${
-                currentStep === 0
-                  ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                  : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-              }`}
+              className={`p-2 sm:p-3 rounded-lg transition-all ${currentStep === 0
+                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+                }`}
               aria-label="Previous question"
             >
               <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -534,11 +607,10 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
             <button
               onClick={handleNext}
               disabled={!currentValue}
-              className={`p-2 sm:p-3 rounded-lg transition-all ${
-                !currentValue
-                  ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                  : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-              }`}
+              className={`p-2 sm:p-3 rounded-lg transition-all ${!currentValue
+                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+                }`}
               aria-label="Next question"
             >
               <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />

@@ -1,12 +1,14 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ChevronUp, ChevronDown, Check, AlertCircle, Loader2 } from 'lucide-react';
-import { supabase } from '../../../lib/supabase';
+import { insertLead } from '@/lib/insertLead';
 
 interface ReserveDateModalProps {
   isOpen: boolean;
   onClose: () => void;
   tourTitle: string;
+  tourId: string | null;
+  fixedDateId: string | null;
   startDate: string;
   endDate: string;
 }
@@ -105,7 +107,7 @@ const questions: Question[] = [
   }
 ];
 
-export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDate }: ReserveDateModalProps) {
+export function ReserveDateModal({ isOpen, onClose, tourTitle, tourId, fixedDateId, startDate, endDate }: ReserveDateModalProps) {
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
   const [formData, setFormData] = useState<FormData>({
@@ -122,6 +124,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
+  const [calendlyEventUrl, setCalendlyEventUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -155,24 +158,22 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
-    const leadType = formData.experienceType === 'Team / Incentive Experience' ? 'Company' : 'Individual';
-
-    const { error } = await supabase.from('leads').insert({
-      lead_type: leadType,
-      status: 'new',
-      details: {
-        tour_title: tourTitle,
-        start_date: startDate,
-        end_date: endDate,
-        experience_type: formData.experienceType,
-        group_size: formData.groupSize,
-        first_name: formData.firstName,
-        last_name: formData.lastName,
-        email: formData.email,
-        phone: formData.phone,
-        schedule_call: formData.scheduleCall,
-        comments: formData.comments,
-      }
+    const { error } = await insertLead({
+      source: 'tour_fixed',
+      departureType: 'fixed',
+      tourId,
+      fixedDateId,
+      customDepartureDate: null,
+      customDepartureDateEnd: null,
+      calendlyLink: calendlyEventUrl,
+      experienceType: formData.experienceType,
+      groupSize: formData.groupSize,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      scheduleCall: formData.scheduleCall === 'Yes, schedule a call',
+      comments: formData.comments,
     });
 
     setIsSubmitting(false);
@@ -183,7 +184,7 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
     } else {
       setSubmitStatus('success');
     }
-  }, [formData, tourTitle, startDate, endDate]);
+  }, [formData, tourId, fixedDateId, calendlyEventUrl]);
 
   const handleNext = useCallback(() => {
     if (currentStep < questions.length - 1) {
@@ -250,8 +251,10 @@ export function ReserveDateModal({ isOpen, onClose, tourTitle, startDate, endDat
   useEffect(() => {
     const handleCalendlyEvent = (e: MessageEvent) => {
       if (e.data.event && e.data.event === 'calendly.event_scheduled') {
-        console.log('Calendly meeting scheduled!', e.data);
-        // Close Calendly modal and advance to step 9
+        // Capture event URI for lead record
+        const uri = e.data.payload?.event?.uri ?? e.data.payload?.invitee?.uri ?? null;
+        if (uri) setCalendlyEventUrl(uri);
+        // Close Calendly modal and advance
         setTimeout(() => {
           setShowCalendlyModal(false);
           handleNext();

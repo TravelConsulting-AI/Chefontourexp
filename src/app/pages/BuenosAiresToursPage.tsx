@@ -1,5 +1,6 @@
 import { motion, useScroll, useTransform } from 'motion/react';
 import { useRef, useState } from 'react';
+import { parseScheduleDate } from '@/utils/formatScheduleDate';
 import { useInView } from '../components/hooks/useInView';
 import { ImageWithFallback } from '../components/figma/ImageWithFallback';
 import charlesImage from '@/assets/c8308d698e3100590c205f625ef741d539cd39a4.png';
@@ -8,6 +9,7 @@ import { useSearchParams, useNavigate } from 'react-router-dom';
 import { ReserveDateModal } from '../components/chef-on-tour/ReserveDateModal';
 import { CustomDateModal } from '../components/chef-on-tour/CustomDateModal';
 import { BookingModal } from '../components/chef-on-tour/BookingModal';
+import { useTourData, resolveFixedDateId } from '../hooks/useTourData';
 
 export function BuenosAiresToursPage() {
   const [searchParams] = useSearchParams();
@@ -15,21 +17,23 @@ export function BuenosAiresToursPage() {
   const [isReserveModalOpen, setIsReserveModalOpen] = useState(false);
   const [isCustomDateModalOpen, setIsCustomDateModalOpen] = useState(false);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
+  const { tourId, title, schedules } = useTourData('buenos-aires');
+  const fixedDateId = resolveFixedDateId(schedules, selectedDate);
 
-  // Buenos Aires departure dates
-  const departureDates = ['2026-01-15', '2026-05-20', '2026-09-25'];
-  const tourName = 'Buenos Aires: Beneath the Furia';
+  // Departure dates from DB schedules
+  const departureDates = schedules.map(s => s.start_date);
+  const tourName = title ?? 'Buenos Aires: Beneath the Furia';
 
   // Calculate end date (9 days / 8 nights)
   const getEndDate = (startDate: string) => {
-    const date = new Date(startDate);
+    const date = parseScheduleDate(startDate);
     date.setDate(date.getDate() + 8);
     return date.toISOString().split('T')[0];
   };
 
   return (
     <div className="min-h-screen bg-[#F4F1EA] overflow-x-hidden">
-      <FloatingDateBar 
+      <FloatingDateBar
         selectedDate={selectedDate}
         departureDates={departureDates}
         tourName={tourName}
@@ -39,7 +43,7 @@ export function BuenosAiresToursPage() {
       <HeroSection />
       <IntroSection />
       <HostSection />
-      <DepartureDatesSection />
+      <DepartureDatesSection departureDates={departureDates} />
       <DetailedItinerary />
       <ManifestoFooter onInquireClick={() => setIsBookingModalOpen(true)} />
 
@@ -49,6 +53,8 @@ export function BuenosAiresToursPage() {
           isOpen={isReserveModalOpen}
           onClose={() => setIsReserveModalOpen(false)}
           tourTitle={tourName}
+          tourId={tourId}
+          fixedDateId={fixedDateId}
           startDate={selectedDate}
           endDate={getEndDate(selectedDate)}
         />
@@ -57,6 +63,7 @@ export function BuenosAiresToursPage() {
         isOpen={isCustomDateModalOpen}
         onClose={() => setIsCustomDateModalOpen(false)}
         tourTitle={tourName}
+        tourId={tourId}
       />
       <BookingModal
         isOpen={isBookingModalOpen}
@@ -67,7 +74,7 @@ export function BuenosAiresToursPage() {
 }
 
 // SECTION 0: FLOATING DATE BAR
-function FloatingDateBar({ 
+function FloatingDateBar({
   selectedDate,
   departureDates,
   tourName,
@@ -85,10 +92,10 @@ function FloatingDateBar({
   const handleDateClick = (date: string) => {
     // If clicking the already selected date, deselect it
     if (date === selectedDate) {
-      navigate('/buenos-aires-tours');
+      navigate('/experiences/buenos-aires');
     } else {
       // Otherwise, select the new date
-      navigate(`/buenos-aires-tours?date=${date}`);
+      navigate(`/experiences/buenos-aires?date=${date}`);
     }
   };
 
@@ -120,7 +127,7 @@ function FloatingDateBar({
             {/* Date buttons */}
             <div className="flex items-stretch gap-1.5 sm:gap-3 flex-1 sm:flex-initial">
               {departureDates.map((date) => {
-                const dateObj = new Date(date);
+                const dateObj = parseScheduleDate(date);
                 const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
                 const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
                 const year = dateObj.toLocaleDateString('en-US', { year: '2-digit' });
@@ -133,29 +140,25 @@ function FloatingDateBar({
                     onClick={() => handleDateClick(date)}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
-                    className={`relative flex-1 sm:flex-initial px-2 sm:px-4 py-2 border-2 transition-all duration-300 ${
-                      isSelected
-                        ? 'border-[#C89B7B] bg-transparent text-[#C89B7B] shadow-[0_0_15px_rgba(200,155,123,0.5)]'
-                        : 'border-[#F4F1EA]/30 bg-transparent text-[#F4F1EA] hover:border-[#C89B7B] hover:bg-[#C89B7B]/10'
-                    }`}
+                    className={`relative flex-1 sm:flex-initial px-2 sm:px-4 py-2 border-2 transition-all duration-300 ${isSelected
+                      ? 'border-[#C89B7B] bg-transparent text-[#C89B7B] shadow-[0_0_15px_rgba(200,155,123,0.5)]'
+                      : 'border-[#F4F1EA]/30 bg-transparent text-[#F4F1EA] hover:border-[#C89B7B] hover:bg-[#C89B7B]/10'
+                      }`}
                   >
                     <div className="flex flex-col sm:flex-row items-center sm:gap-2">
                       <div className="text-center">
                         {/* Mobile format: FEB 14 '26 */}
-                        <p className={`sm:hidden font-mono text-[10px] uppercase tracking-wider ${
-                          isSelected ? 'font-bold' : ''
-                        }`}>
+                        <p className={`sm:hidden font-mono text-[10px] uppercase tracking-wider ${isSelected ? 'font-bold' : ''
+                          }`}>
                           {month} {day} '{year}
                         </p>
                         {/* Desktop format: Feb 14 + 2026 */}
-                        <p className={`hidden sm:block font-mono text-xs uppercase tracking-wider ${
-                          isSelected ? 'font-bold' : ''
-                        }`}>
+                        <p className={`hidden sm:block font-mono text-xs uppercase tracking-wider ${isSelected ? 'font-bold' : ''
+                          }`}>
                           {month} {day}
                         </p>
-                        <p className={`hidden sm:block font-mono text-[10px] ${
-                          isSelected ? 'opacity-90' : 'opacity-60'
-                        }`}>
+                        <p className={`hidden sm:block font-mono text-[10px] ${isSelected ? 'opacity-90' : 'opacity-60'
+                          }`}>
                           {fullYear}
                         </p>
                       </div>
@@ -200,8 +203,8 @@ function HeroSection() {
   const { ref, isInView } = useInView({ threshold: 0.3 });
 
   return (
-    <section 
-      ref={ref} 
+    <section
+      ref={ref}
       className="relative h-screen w-full overflow-hidden bg-[#1A1A1A] pt-0 md:pt-[200px] lg:pt-[200px]"
     >
       {/* Background Image with Overlay */}
@@ -349,22 +352,19 @@ function HostSection() {
 }
 
 // SECTION 4: DEPARTURE DATES
-function DepartureDatesSection() {
+function DepartureDatesSection({ departureDates }: { departureDates: string[] }) {
   const { ref, isInView } = useInView({ threshold: 0.2 });
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const selectedDate = searchParams.get('date');
 
-  // Buenos Aires departure dates (same as FloatingDateBar)
-  const departureDates = ['2026-01-15', '2026-05-20', '2026-09-25'];
-
   const handleDateClick = (date: string) => {
     // If clicking the already selected date, deselect it
     if (date === selectedDate) {
-      navigate('/buenos-aires-tours');
+      navigate('/experiences/buenos-aires');
     } else {
       // Otherwise, select the new date
-      navigate(`/buenos-aires-tours?date=${date}`);
+      navigate(`/experiences/buenos-aires?date=${date}`);
     }
   };
 
@@ -389,12 +389,12 @@ function DepartureDatesSection() {
           {/* Mobile: Single Row Minimal Layout */}
           <div className="md:hidden grid grid-cols-3 gap-3">
             {departureDates.map((date, index) => {
-              const dateObj = new Date(date);
+              const dateObj = parseScheduleDate(date);
               const month = dateObj.toLocaleDateString('en-US', { month: 'short' }).toUpperCase();
               const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
               const year = dateObj.toLocaleDateString('en-US', { year: '2-digit' });
               const isSelected = date === selectedDate;
-              
+
               return (
                 <motion.button
                   key={index}
@@ -404,29 +404,25 @@ function DepartureDatesSection() {
                   transition={{ duration: 0.6, delay: index * 0.15 }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  className={`group relative bg-[#1A1A1A] cursor-pointer transition-all duration-300 text-center overflow-hidden border-2 py-4 px-2 ${
-                    isSelected 
-                      ? 'border-[#C89B7B] shadow-[0_0_15px_rgba(200,155,123,0.5)]' 
-                      : 'border-transparent hover:border-[#C89B7B]/50'
-                  }`}
+                  className={`group relative bg-[#1A1A1A] cursor-pointer transition-all duration-300 text-center overflow-hidden border-2 py-4 px-2 ${isSelected
+                    ? 'border-[#C89B7B] shadow-[0_0_15px_rgba(200,155,123,0.5)]'
+                    : 'border-transparent hover:border-[#C89B7B]/50'
+                    }`}
                 >
                   <div className="flex flex-col items-center gap-1">
-                    <span className={`font-mono text-[10px] uppercase tracking-wider ${
-                      isSelected ? 'text-[#C89B7B]' : 'text-[#F4F1EA]'
-                    }`}>
+                    <span className={`font-mono text-[10px] uppercase tracking-wider ${isSelected ? 'text-[#C89B7B]' : 'text-[#F4F1EA]'
+                      }`}>
                       {month}
                     </span>
-                    <span className={`font-serif text-2xl ${
-                      isSelected ? 'text-[#C89B7B]' : 'text-[#F4F1EA]'
-                    }`}>
+                    <span className={`font-serif text-2xl ${isSelected ? 'text-[#C89B7B]' : 'text-[#F4F1EA]'
+                      }`}>
                       {day}
                     </span>
-                    <span className={`font-mono text-[10px] ${
-                      isSelected ? 'text-[#C89B7B]/80' : 'text-[#F4F1EA]/60'
-                    }`}>
+                    <span className={`font-mono text-[10px] ${isSelected ? 'text-[#C89B7B]/80' : 'text-[#F4F1EA]/60'
+                      }`}>
                       '{year}
                     </span>
-                    
+
                     {isSelected && (
                       <motion.div
                         initial={{ scale: 0 }}
@@ -445,12 +441,12 @@ function DepartureDatesSection() {
           {/* Desktop: Three Column Layout */}
           <div className="hidden md:grid grid-cols-3 gap-6">
             {departureDates.map((date, index) => {
-              const dateObj = new Date(date);
+              const dateObj = parseScheduleDate(date);
               const month = dateObj.toLocaleDateString('en-US', { month: 'long' });
               const day = dateObj.toLocaleDateString('en-US', { day: 'numeric' });
               const year = dateObj.toLocaleDateString('en-US', { year: 'numeric' });
               const isSelected = date === selectedDate;
-              
+
               return (
                 <motion.button
                   key={index}
@@ -484,9 +480,8 @@ function DepartureDatesSection() {
 
                     {/* Day - Large Number */}
                     <div className="mb-8">
-                      <p className={`font-serif text-8xl transition-colors duration-300 ${
-                        isSelected ? 'text-[#C89B7B]' : 'text-[#F4F1EA] group-hover:text-[#C89B7B]'
-                      }`}>
+                      <p className={`font-serif text-8xl transition-colors duration-300 ${isSelected ? 'text-[#C89B7B]' : 'text-[#F4F1EA] group-hover:text-[#C89B7B]'
+                        }`}>
                         {day}
                       </p>
                     </div>
@@ -500,11 +495,10 @@ function DepartureDatesSection() {
                   </div>
 
                   {/* Bottom accent line */}
-                  <div className={`h-1 transition-all duration-300 ${
-                    isSelected 
-                      ? 'bg-[#C89B7B] shadow-[0_0_15px_rgba(200,155,123,0.6)]' 
-                      : 'bg-[#C89B7B]/50 group-hover:bg-[#C89B7B] group-hover:shadow-[0_0_15px_rgba(200,155,123,0.4)]'
-                  }`} />
+                  <div className={`h-1 transition-all duration-300 ${isSelected
+                    ? 'bg-[#C89B7B] shadow-[0_0_15px_rgba(200,155,123,0.6)]'
+                    : 'bg-[#C89B7B]/50 group-hover:bg-[#C89B7B] group-hover:shadow-[0_0_15px_rgba(200,155,123,0.4)]'
+                    }`} />
                 </motion.button>
               );
             })}
@@ -1267,30 +1261,30 @@ function ManifestoFooter({ onInquireClick }: { onInquireClick: () => void }) {
           <h2 className="mb-12 font-serif text-[32px] md:text-6xl">
             WHY THIS JOURNEY EXISTS
           </h2>
-          
+
           <p className="font-sans text-xl leading-relaxed">
             This is not a "Buenos Aires trip."
           </p>
-          
+
           <p className="font-sans text-xl leading-relaxed">
             It is a curated descent—from surface to substance.
           </p>
-          
+
           <p className="font-sans text-xl leading-relaxed">
             Through food, fire, wine, sound, and conversation, guests experience how Chef on Tour operates at its highest level:
           </p>
-          
+
           <div className="my-12 space-y-4 border-l-4 border-[#D4A574] pl-8">
             <p className="font-mono text-lg">relationship-driven</p>
             <p className="font-mono text-lg">culturally literate</p>
             <p className="font-mono text-lg">emotionally intelligent</p>
             <p className="font-mono text-lg">unafraid of silence</p>
           </div>
-          
+
           <p className="font-sans text-xl leading-relaxed">
             With <strong>Charles Webb</strong> opening doors and the elemental philosophy of <strong>Francis Mallmann</strong> shaping the spirit of the journey, this experience does not promise transformation.
           </p>
-          
+
           <p className="font-serif text-2xl italic leading-relaxed">
             It simply creates the conditions for it.
           </p>

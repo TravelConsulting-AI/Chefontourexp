@@ -8,4 +8,12 @@ if (!supabaseUrl || !supabaseAnonKey) {
     throw new Error('Missing Supabase environment variables. Check your .env file.')
 }
 
-export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey)
+export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+        // Use a no-op lock instead of navigator.locks to prevent AbortError
+        // from lock contention. Safe for single-tab applications.
+        lock: async (_name: string, _acquireTimeout: number, fn: () => Promise<any>) => {
+            return await fn()
+        },
+    },
+})

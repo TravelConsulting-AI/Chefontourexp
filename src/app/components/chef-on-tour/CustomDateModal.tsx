@@ -1,11 +1,13 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
-import { X, ChevronUp, ChevronDown, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { insertLead } from '@/lib/insertLead';
 
 interface CustomDateModalProps {
   isOpen: boolean;
   onClose: () => void;
   tourTitle: string;
+  tourId?: string | null;
 }
 
 interface FormData {
@@ -24,9 +26,9 @@ type Question = {
   question: string;
   field: keyof FormData;
 } & (
-  | { type: 'dropdown'; options: string[] }
-  | { type: 'text' | 'email' | 'phone'; placeholder: string }
-);
+    | { type: 'dropdown'; options: string[] }
+    | { type: 'text' | 'email' | 'phone'; placeholder: string }
+  );
 
 // Questions starting from step 2 (after date selection)
 const questions: Question[] = [
@@ -103,19 +105,19 @@ const questions: Question[] = [
 ];
 
 // Calendar Component for Date Range Selection
-function Calendar({ 
+function Calendar({
   startDate,
   endDate,
   onSelectStartDate,
   onSelectEndDate
-}: { 
+}: {
   startDate: Date | null;
   endDate: Date | null;
   onSelectStartDate: (date: Date) => void;
   onSelectEndDate: (date: Date) => void;
 }) {
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  
+
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
     const month = date.getMonth();
@@ -123,7 +125,7 @@ function Calendar({
     const lastDay = new Date(year, month + 1, 0);
     const daysInMonth = lastDay.getDate();
     const startingDayOfWeek = firstDay.getDay();
-    
+
     return { daysInMonth, startingDayOfWeek };
   };
 
@@ -142,7 +144,7 @@ function Calendar({
   const handleDateClick = (day: number) => {
     const selected = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     selected.setHours(0, 0, 0, 0);
-    
+
     // Only allow future dates
     if (selected < today) return;
 
@@ -210,8 +212,8 @@ function Calendar({
   const dayNames = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
   // Check if we can go back (current month is not in the past)
-  const canGoPrev = currentMonth.getMonth() > today.getMonth() || 
-                    currentMonth.getFullYear() > today.getFullYear();
+  const canGoPrev = currentMonth.getMonth() > today.getMonth() ||
+    currentMonth.getFullYear() > today.getFullYear();
 
   return (
     <div className="w-full max-w-md mx-auto">
@@ -220,11 +222,10 @@ function Calendar({
         <button
           onClick={prevMonth}
           disabled={!canGoPrev}
-          className={`p-2 rounded-lg transition-all ${
-            canGoPrev
-              ? 'text-[#D4A574] hover:bg-[#D4A574]/10'
-              : 'text-[#D4A574]/20 cursor-not-allowed'
-          }`}
+          className={`p-2 rounded-lg transition-all ${canGoPrev
+            ? 'text-[#D4A574] hover:bg-[#D4A574]/10'
+            : 'text-[#D4A574]/20 cursor-not-allowed'
+            }`}
         >
           <ChevronLeft className="h-5 w-5" />
         </button>
@@ -269,8 +270,8 @@ function Calendar({
               whileTap={!disabled ? { scale: 0.95 } : {}}
               className={`
                 aspect-square rounded-lg text-sm font-medium transition-all
-                ${disabled 
-                  ? 'text-[#D4A574]/20 cursor-not-allowed' 
+                ${disabled
+                  ? 'text-[#D4A574]/20 cursor-not-allowed'
                   : isStart || isEnd
                     ? 'bg-[#D4A574] text-[#3a4157]'
                     : inRange
@@ -312,7 +313,7 @@ function Calendar({
   );
 }
 
-export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalProps) {
+export function CustomDateModal({ isOpen, onClose, tourTitle, tourId }: CustomDateModalProps) {
   const [currentStep, setCurrentStep] = useState(-1); // -1 for calendar step
   const [direction, setDirection] = useState(0);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
@@ -329,17 +330,20 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [calendlyEventUrl, setCalendlyEventUrl] = useState<string | null>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   // Get current question (only when past the calendar step)
   const currentQuestion = currentStep >= 0 ? questions[currentStep] : null;
   const currentValue = currentQuestion ? formData[currentQuestion.field] : '';
-  
+
   // Check if this is the final step
   const isFinalStep = currentStep === questions.length - 1;
   const isCalendarStep = currentStep === -1;
-  
+
   // Build Calendly URL with prefilled parameters
   const calendlyUrl = `https://calendly.com/chefontour?hide_landing_page_details=1&hide_gdpr_banner=1&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}&email=${encodeURIComponent(formData.email)}`;
 
@@ -380,6 +384,38 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
     }
   }, [isOpen]);
 
+  const handleSubmitLead = useCallback(async () => {
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const { error } = await insertLead({
+      source: 'tour_custom',
+      departureType: 'custom',
+      tourId: tourId ?? null,
+      fixedDateId: null,
+      customDepartureDate: selectedStartDate?.toISOString().split('T')[0] ?? null,
+      customDepartureDateEnd: selectedEndDate?.toISOString().split('T')[0] ?? null,
+      calendlyLink: calendlyEventUrl,
+      experienceType: formData.experienceType,
+      groupSize: formData.groupSize,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      scheduleCall: formData.scheduleCall === 'Yes, schedule a call',
+      comments: formData.comments,
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      console.error('Lead submission error:', error);
+      setSubmitStatus('error');
+    } else {
+      setSubmitStatus('success');
+    }
+  }, [formData, tourId, selectedStartDate, selectedEndDate, calendlyEventUrl]);
+
   const handleNext = useCallback(() => {
     if (isCalendarStep && selectedStartDate && selectedEndDate) {
       // Move from calendar to first question
@@ -390,16 +426,10 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
       setIsDropdownOpen(false);
       setCurrentStep(currentStep + 1);
     } else {
-      // All steps completed
-      console.log('Custom date form completed', { 
-        ...formData, 
-        tourTitle, 
-        startDate: selectedStartDate?.toISOString(), 
-        endDate: selectedEndDate?.toISOString() 
-      });
-      onClose();
+      // Final step — submit to Supabase
+      handleSubmitLead();
     }
-  }, [currentStep, formData, onClose, tourTitle, selectedStartDate, selectedEndDate, isCalendarStep]);
+  }, [currentStep, selectedStartDate, selectedEndDate, isCalendarStep, handleSubmitLead]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > -1) {
@@ -412,7 +442,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (!isOpen || showCalendlyModal) return;
-      
+
       if (e.key === 'Escape') {
         onClose();
       } else if (e.key === 'Enter' && !isCalendarStep && currentValue && !isDropdownOpen) {
@@ -433,19 +463,19 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, currentValue, handleNext, handlePrevious, onClose, showCalendlyModal, isDropdownOpen, isCalendarStep, selectedStartDate, selectedEndDate]);
-  
+
   // Load Calendly script when showCalendlyModal becomes true
   useEffect(() => {
     if (showCalendlyModal) {
       const existingScript = document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]');
-      
+
       if (!existingScript) {
         const script = document.createElement('script');
         script.src = 'https://assets.calendly.com/assets/external/widget.js';
         script.type = 'text/javascript';
         script.async = true;
         document.body.appendChild(script);
-        
+
         return () => {
           if (document.body.contains(script)) {
             document.body.removeChild(script);
@@ -459,8 +489,10 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
   useEffect(() => {
     const handleCalendlyEvent = (e: MessageEvent) => {
       if (e.data.event && e.data.event === 'calendly.event_scheduled') {
-        console.log('Calendly meeting scheduled!', e.data);
-        // Close Calendly modal and advance to step 9
+        // Capture event URI for lead record
+        const uri = e.data.payload?.event?.uri ?? e.data.payload?.invitee?.uri ?? null;
+        if (uri) setCalendlyEventUrl(uri);
+        // Close Calendly modal and advance
         setTimeout(() => {
           setShowCalendlyModal(false);
           handleNext();
@@ -486,24 +518,24 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
           inputRef.current.focus();
         }
       }, 600);
-      
+
       return () => clearTimeout(timer);
     }
   }, [currentStep, isOpen, currentQuestion, isFinalStep, isCalendarStep]);
 
   const handleSelectOption = (option: string) => {
     if (!currentQuestion) return;
-    
+
     setFormData({
       ...formData,
       [currentQuestion.field]: option
     });
     setIsDropdownOpen(false);
-    
+
     // Check if this is step 8 (index 6 in our array) and user selected "Yes, schedule a call"
     const isStep8 = currentStep === 6;
     const wantsToSchedule = option === "Yes, schedule a call";
-    
+
     // If it's step 8 and user wants to schedule, show Calendly modal
     if (isStep8 && wantsToSchedule) {
       setTimeout(() => {
@@ -511,7 +543,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
       }, 300);
       return;
     }
-    
+
     // For all other cases, auto-advance after short delay
     setTimeout(() => {
       handleNext();
@@ -520,7 +552,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (!currentQuestion) return;
-    
+
     setFormData({
       ...formData,
       [currentQuestion.field]: e.target.value
@@ -529,7 +561,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
 
   const handleTextareaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (!currentQuestion) return;
-    
+
     setFormData({
       ...formData,
       [currentQuestion.field]: e.target.value
@@ -564,7 +596,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
   if (!isOpen) return null;
 
   const isTextInput = currentQuestion && currentQuestion.type !== 'dropdown';
-  
+
   return (
     <>
       <motion.div
@@ -648,8 +680,8 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.5 }}
                         >
-                          <Calendar 
-                            startDate={selectedStartDate} 
+                          <Calendar
+                            startDate={selectedStartDate}
                             endDate={selectedEndDate}
                             onSelectStartDate={handleSelectStartDate}
                             onSelectEndDate={handleSelectEndDate}
@@ -747,7 +779,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
                                   ref={inputRef}
                                 />
                               )}
-                              
+
                               {/* OK Button */}
                               <motion.div
                                 initial={{ opacity: 0, y: 10 }}
@@ -757,16 +789,20 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
                               >
                                 <motion.button
                                   onClick={handleNext}
-                                  disabled={!isFinalStep && !currentValue}
-                                  className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${
-                                    (!isFinalStep && !currentValue)
-                                      ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                                      : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
-                                  }`}
-                                  whileHover={(!isFinalStep && !currentValue) ? {} : { scale: 1.02 }}
-                                  whileTap={(!isFinalStep && !currentValue) ? {} : { scale: 0.98 }}
+                                  disabled={(!isFinalStep && !currentValue) || isSubmitting}
+                                  className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${((!isFinalStep && !currentValue) || isSubmitting)
+                                    ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                                    : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
+                                    }`}
+                                  whileHover={((!isFinalStep && !currentValue) || isSubmitting) ? {} : { scale: 1.02 }}
+                                  whileTap={((!isFinalStep && !currentValue) || isSubmitting) ? {} : { scale: 0.98 }}
                                 >
-                                  {isFinalStep ? 'Submit Request' : 'OK'}
+                                  {isSubmitting ? (
+                                    <span className="flex items-center gap-2">
+                                      <Loader2 className="h-4 w-4 animate-spin" />
+                                      Submitting…
+                                    </span>
+                                  ) : isFinalStep ? 'Submit Request' : 'OK'}
                                 </motion.button>
                                 {!isFinalStep && (
                                   <span className="text-[#D4A574]/40 text-xs sm:text-sm hidden sm:inline">
@@ -775,8 +811,40 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
                                 )}
                               </motion.div>
 
-                              {/* Final Step Message */}
-                              {isFinalStep && (
+                              {/* Final Step — Submit Status */}
+                              {isFinalStep && submitStatus === 'success' && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.3 }}
+                                  className="mt-8 sm:mt-12 space-y-2"
+                                >
+                                  <div className="flex items-center gap-2 text-emerald-400">
+                                    <Check className="h-5 w-5" />
+                                    <p className="text-base sm:text-lg font-medium">Request Submitted!</p>
+                                  </div>
+                                  <p className="text-[#D4A574]/70 text-sm sm:text-base">
+                                    We'll be in touch soon.
+                                  </p>
+                                </motion.div>
+                              )}
+                              {isFinalStep && submitStatus === 'error' && (
+                                <motion.div
+                                  initial={{ opacity: 0, y: 20 }}
+                                  animate={{ opacity: 1, y: 0 }}
+                                  transition={{ delay: 0.3 }}
+                                  className="mt-8 sm:mt-12 space-y-2"
+                                >
+                                  <div className="flex items-center gap-2 text-red-400">
+                                    <AlertCircle className="h-5 w-5" />
+                                    <p className="text-base sm:text-lg font-medium">Something went wrong</p>
+                                  </div>
+                                  <p className="text-[#D4A574]/70 text-sm sm:text-base">
+                                    Please try again or reach out directly.
+                                  </p>
+                                </motion.div>
+                              )}
+                              {isFinalStep && submitStatus === 'idle' && !isSubmitting && (
                                 <motion.div
                                   initial={{ opacity: 0, y: 20 }}
                                   animate={{ opacity: 1, y: 0 }}
@@ -803,9 +871,8 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
                                   {currentValue || 'Type or select an option'}
                                 </span>
                                 <ChevronUp
-                                  className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${
-                                    isDropdownOpen ? 'rotate-180' : ''
-                                  }`}
+                                  className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${isDropdownOpen ? 'rotate-180' : ''
+                                    }`}
                                 />
                               </button>
 
@@ -854,11 +921,10 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
               <button
                 onClick={handlePrevious}
                 disabled={currentStep === -1}
-                className={`p-2 sm:p-3 rounded-lg transition-all ${
-                  currentStep === -1
-                    ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                    : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-                }`}
+                className={`p-2 sm:p-3 rounded-lg transition-all ${currentStep === -1
+                  ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                  : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+                  }`}
                 aria-label="Previous question"
               >
                 <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -866,11 +932,10 @@ export function CustomDateModal({ isOpen, onClose, tourTitle }: CustomDateModalP
               <button
                 onClick={handleNext}
                 disabled={isCalendarStep ? !(selectedStartDate && selectedEndDate) : !currentValue}
-                className={`p-2 sm:p-3 rounded-lg transition-all ${
-                  (isCalendarStep ? !(selectedStartDate && selectedEndDate) : !currentValue)
-                    ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                    : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-                }`}
+                className={`p-2 sm:p-3 rounded-lg transition-all ${(isCalendarStep ? !(selectedStartDate && selectedEndDate) : !currentValue)
+                  ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                  : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+                  }`}
                 aria-label="Next question"
               >
                 <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />

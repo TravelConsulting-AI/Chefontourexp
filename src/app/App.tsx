@@ -1,5 +1,7 @@
-import { BrowserRouter, Routes, Route, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
 import { useEffect } from 'react';
+import { AuthProvider } from './context/AuthContext';
+import { Toaster } from './components/ui/sonner';
 import { ChefHeader } from './components/chef-on-tour/ChefHeader';
 import { VideoHero } from './components/chef-on-tour/VideoHero';
 import { WhySection } from './components/chef-on-tour/WhySection';
@@ -26,19 +28,25 @@ import { BeirutToursPage } from './pages/BeirulToursPage';
 import { TeamPage } from './pages/TeamPage';
 import { DestinationsPage } from './pages/DestinationsPage';
 import { ExperiencesPage } from './pages/ExperiencesPage';
+import { AccountPage } from './pages/AccountPage';
+import { AdminPage } from './pages/AdminPage';
+import { LoginPage } from './pages/LoginPage';
+import { SignupPage } from './pages/SignupPage';
+import { ResetPasswordPage } from './pages/ResetPasswordPage';
+import { ProtectedRoute } from './components/ProtectedRoute';
+import { ExperienceRouter } from './pages/ExperienceRouter';
 
 // Scroll to top component
 function ScrollToTop() {
-  const { pathname, search } = useLocation();
+  const { pathname } = useLocation();
 
   useEffect(() => {
-    // Only scroll to top when pathname changes, not when search params change
     window.scrollTo({
       top: 0,
       left: 0,
       behavior: 'instant' as ScrollBehavior
     });
-  }, [pathname]); // Only depend on pathname, not search
+  }, [pathname]);
 
   return null;
 }
@@ -66,28 +74,66 @@ function HomePage() {
   );
 }
 
+/** Layout with header + footer (all regular pages) */
+function ShellLayout() {
+  return (
+    <div className="relative min-h-screen bg-white overflow-x-hidden">
+      <ChefHeader />
+      <Outlet />
+      <ChefFooter />
+    </div>
+  );
+}
+
 export default function App() {
   return (
     <BrowserRouter>
-      <div className="relative min-h-screen bg-white overflow-x-hidden">
-        <ChefHeader />
+      <AuthProvider>
         <ScrollToTop />
         <Routes>
-          <Route path="/" element={<HomePage />} />
-          <Route path="/destinations" element={<DestinationsPage />} />
-          <Route path="/tours" element={<ToursPage />} />
-          <Route path="/medellin-tours" element={<MedellinToursPage />} />
-          <Route path="/buenos-aires-tours" element={<BuenosAiresToursPage />} />
-          <Route path="/rio-tours" element={<RioToursPage />} />
-          <Route path="/palermo-tours" element={<PalermoToursPage />} />
-          <Route path="/malaga-tours" element={<MalagaToursPage />} />
-          <Route path="/istanbul-tours" element={<IstanbulToursPage />} />
-          <Route path="/beirut-tours" element={<BeirutToursPage />} />
-          <Route path="/team" element={<TeamPage />} />
-          <Route path="/experiences" element={<ExperiencesPage />} />
+          {/* ── Auth pages (no header / footer) ── */}
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/signup" element={<SignupPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
+
+          {/* ── Shell layout (header + footer) ── */}
+          <Route element={<ShellLayout />}>
+            <Route path="/" element={<HomePage />} />
+            <Route path="/destinations" element={<DestinationsPage />} />
+            {/* Canonical experience routes */}
+            <Route path="/experiences" element={<ExperiencesPage />} />
+            <Route path="/experiences/:canonicalSlug" element={<ExperienceRouter />} />
+
+            {/* Legacy redirects → canonical URLs */}
+            <Route path="/tours" element={<Navigate to="/experiences/barcelona" replace />} />
+            <Route path="/medellin-tours" element={<Navigate to="/experiences/medellin" replace />} />
+            <Route path="/buenos-aires-tours" element={<Navigate to="/experiences/buenos-aires" replace />} />
+            <Route path="/rio-tours" element={<Navigate to="/experiences/rio" replace />} />
+            <Route path="/palermo-tours" element={<Navigate to="/experiences/palermo" replace />} />
+            <Route path="/malaga-tours" element={<Navigate to="/experiences/malaga" replace />} />
+            <Route path="/istanbul-tours" element={<Navigate to="/experiences/istanbul" replace />} />
+            <Route path="/beirut-tours" element={<Navigate to="/experiences/beirut" replace />} />
+            <Route path="/team" element={<TeamPage />} />
+            <Route
+              path="/account"
+              element={
+                <ProtectedRoute>
+                  <AccountPage />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/admin"
+              element={
+                <ProtectedRoute allowedRoles={['superadmin', 'leadership']}>
+                  <AdminPage />
+                </ProtectedRoute>
+              }
+            />
+          </Route>
         </Routes>
-        <ChefFooter />
-      </div>
+        <Toaster position="bottom-right" />
+      </AuthProvider>
     </BrowserRouter>
   );
 }

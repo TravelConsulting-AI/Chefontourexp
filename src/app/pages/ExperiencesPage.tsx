@@ -20,8 +20,8 @@ function HeroSection() {
   const { ref, isInView } = useInView({ threshold: 0.3 });
 
   return (
-    <section 
-      ref={ref} 
+    <section
+      ref={ref}
       className="relative h-screen w-full overflow-hidden"
     >
       {/* Background Image with Overlay */}
@@ -42,7 +42,7 @@ function HeroSection() {
           transition={{ duration: 1.4, delay: 0.3 }}
           className="max-w-5xl"
         >
-          <motion.h1 
+          <motion.h1
             className="mb-6 font-serif text-5xl sm:text-6xl md:text-8xl lg:text-[120px] leading-[0.95] tracking-tight"
             initial={{ opacity: 0, y: 40 }}
             animate={isInView ? { opacity: 1, y: 0 } : {}}
@@ -51,8 +51,8 @@ function HeroSection() {
             CULINARY<br />
             IMMERSIONS
           </motion.h1>
-          
-          <motion.p 
+
+          <motion.p
             className="mb-8 text-xl sm:text-2xl md:text-3xl font-sans font-light tracking-wide"
             initial={{ opacity: 0 }}
             animate={isInView ? { opacity: 1 } : {}}
@@ -87,7 +87,7 @@ function HeroSection() {
           className="text-[#F4F1EA]/60"
         >
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor">
-            <path d="M12 5v14M19 12l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            <path d="M12 5v14M19 12l-7 7-7-7" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
           </svg>
         </motion.div>
       </motion.div>
@@ -111,17 +111,17 @@ function PhilosophySection() {
           <h2 className="font-serif text-4xl sm:text-5xl md:text-6xl italic text-[#1a1a1a] mb-8">
             Beyond Tourism
           </h2>
-          
+
           <p className="font-sans text-xl sm:text-2xl leading-relaxed text-[#111111]">
             These are not tours. They are immersions into the soul of a city—its kitchens, markets, ateliers, and underground culture.
           </p>
-          
+
           <div className="my-16 border-l-4 border-[#1a1a1a] pl-8 text-left max-w-3xl mx-auto">
             <p className="font-serif text-2xl sm:text-3xl italic leading-relaxed text-[#1a1a1a]">
               We believe the real story of a place begins once the guidebook fails.
             </p>
           </div>
-          
+
           <p className="font-sans text-xl sm:text-2xl leading-relaxed text-[#111111]">
             Each experience is led by Chef Charles Webb alongside trusted local cultural guides who open doors most travelers never see.
           </p>
@@ -139,56 +139,56 @@ function ExperiencesGrid() {
       subtitle: 'Beneath the Surface',
       description: '6 Days immersed in Catalan cuisine, art, and wine culture',
       image: 'https://images.unsplash.com/photo-1662981187531-849408cc8365?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxCYXJjZWxvbmElMjBza3lsaW5lJTIwc3Vuc2V0fGVufDF8fHx8MTc2ODA3MTY4M3ww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/tours'
+      link: '/experiences/barcelona'
     },
     {
       title: 'Medellín',
       subtitle: 'Beneath the Valley',
       description: '5 Days exploring Colombia\'s transformation through food and culture',
       image: 'https://images.unsplash.com/photo-1650201777831-8c5c23a2b41e?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxNZWRlbGxpbiUyMENvbG9tYmlhJTIwdmFsbGV5fGVufDF8fHx8MTc2ODA3MTY4NHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/medellin-tours'
+      link: '/experiences/medellin'
     },
     {
       title: 'Buenos Aires',
       subtitle: 'Beneath the Fire',
       description: '7 Days navigating Argentine cuisine, tango, and culinary heritage',
       image: 'https://images.unsplash.com/flagged/photo-1576542062543-b11118d96d53?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxCdWVub3MlMjBBaXJlcyUyMHRhbmdvfGVufDF8fHx8MTc2ODA3MTY4NHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/buenos-aires-tours'
+      link: '/experiences/buenos-aires'
     },
     {
       title: 'Rio de Janeiro',
       subtitle: 'Beneath the Mountain',
       description: '6 Days discovering Brazilian flavors between mountain and sea',
       image: 'https://images.unsplash.com/photo-1515700281303-5a0a73d9c584?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxSaW8lMjBkZSUyMEphbmVpcm8lMjBtb3VudGFpbnN8ZW58MXx8fHwxNzY4MDcxNjg1fDA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/rio-tours'
+      link: '/experiences/rio'
     },
     {
       title: 'Palermo',
       subtitle: 'Beneath the Sun',
       description: '5 Days tracing Sicily\'s ancient culinary crossroads',
       image: 'https://images.unsplash.com/photo-1602277644657-3122e6f8f001?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxQYWxlcm1vJTIwU2ljaWx5JTIwYXJjaGl0ZWN0dXJlfGVufDF8fHx8MTc2ODA0MzQ1OHww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/palermo-tours'
+      link: '/experiences/palermo'
     },
     {
       title: 'Málaga',
       subtitle: 'Beneath the Waves',
       description: '5 Days exploring Andalusian coast and culinary traditions',
       image: 'https://images.unsplash.com/photo-1730241710115-cce7b963951c?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxNYWxhZ2ElMjBTcGFpbiUyMGNvYXN0fGVufDF8fHx8MTc2ODA3MTY4NXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/malaga-tours'
+      link: '/experiences/malaga'
     },
     {
       title: 'Istanbul',
       subtitle: 'Beneath the Bridge',
       description: '6 Days at the crossroads of East and West',
       image: 'https://images.unsplash.com/photo-1634397013564-fb14aa46dc76?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxJc3RhbmJ1bCUyMG1vc3F1ZSUyMHN1bnNldHxlbnwxfHx8fDE3NjgwNzE2ODZ8MA&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/istanbul-tours'
+      link: '/experiences/istanbul'
     },
     {
       title: 'Beirut',
       subtitle: 'Beneath the Cedars',
       description: '5 Days experiencing Lebanon\'s resilient culinary spirit',
       image: 'https://images.unsplash.com/photo-1759403605420-dca1e5c28a48?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&ixid=M3w3Nzg4Nzd8MHwxfHNlYXJjaHwxfHxCZWlydXQlMjBMZWJhbm9uJTIwY2l0eXNjYXBlfGVufDF8fHx8MTc2ODA2Mzc5OXww&ixlib=rb-4.1.0&q=80&w=1080&utm_source=figma&utm_medium=referral',
-      link: '/beirut-tours'
+      link: '/experiences/beirut'
     }
   ];
 
@@ -244,7 +244,7 @@ function ExperienceCard({ experience, index }: { experience: any; index: number 
               <p className="mb-8 font-sans text-lg sm:text-xl text-[#F4F1EA]/80 leading-relaxed">
                 {experience.description}
               </p>
-              
+
               <div className="flex items-center gap-3 text-[#D4A574] group-hover:gap-5 transition-all duration-300">
                 <span className="font-sans text-sm uppercase tracking-wider">Explore Journey</span>
                 <ArrowRight className="h-5 w-5" />
@@ -275,7 +275,7 @@ function CallToAction() {
         <p className="mb-12 font-sans text-xl sm:text-2xl text-[#111111] leading-relaxed">
           Each experience is intimate, transformative, and designed for travelers who seek meaning over spectacle.
         </p>
-        
+
         <motion.button
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}

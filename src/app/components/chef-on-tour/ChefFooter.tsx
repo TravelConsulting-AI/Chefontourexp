@@ -14,7 +14,7 @@ export function ChefFooter() {
           <div>
             <h3 className="mb-4 sm:mb-6 text-xl sm:text-2xl font-serif">Chef On Tour</h3>
             <p className="mb-4 sm:mb-6 text-sm sm:text-base text-gray-400">
-              Curated culinary experiences around the world, led by renowned Chef Charles Webb. 
+              Curated culinary experiences around the world, led by renowned Chef Charles Webb.
               Discover authentic flavors and create unforgettable memories.
             </p>
             {/* Social icons hidden for now */}
@@ -43,40 +43,50 @@ export function ChefFooter() {
             <h4 className="mb-4 sm:mb-6 font-semibold text-base sm:text-lg">Quick Links</h4>
             <ul className="space-y-2 sm:space-y-3">
               <li>
-                <Link 
-                  to="/" 
+                <Link
+                  to="/"
                   className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
                 >
                   Home
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/experiences" 
+                <Link
+                  to="/experiences"
                   className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
                 >
                   All Experiences
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/destinations" 
+                <Link
+                  to="/destinations"
                   className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
                 >
                   Destinations
                 </Link>
               </li>
               <li>
-                <Link 
-                  to="/team" 
+                <Link
+                  to="/team"
                   className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
                 >
                   Team
                 </Link>
               </li>
               <li>
-                <a 
-                  href="/#contact" 
+                <a
+                  href="/admin/login"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
+                >
+                  Team Login
+                </a>
+              </li>
+              <li>
+                <a
+                  href="/#contact"
                   className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
                 >
                   Contact
@@ -90,17 +100,17 @@ export function ChefFooter() {
             <h4 className="mb-4 sm:mb-6 font-semibold text-base sm:text-lg">Curated Experiences</h4>
             <ul className="space-y-3 sm:space-y-4">
               {[
-                { name: 'Medellín', subtitle: 'Beneath the Valley', link: '/medellin-tours' },
-                { name: 'Buenos Aires', subtitle: 'Beneath the Furia', link: '/buenos-aires-tours' },
-                { name: 'Rio de Janeiro', subtitle: 'Beneath the Hustle', link: '/rio-tours' },
-                { name: 'Palermo', subtitle: 'Beneath the Sunhine', link: '/palermo-tours' },
-                { name: 'Málaga', subtitle: 'Beneath the Onda', link: '/malaga-tours' },
-                { name: 'Istanbul', subtitle: 'Beneath the Bridge', link: '/istanbul-tours' },
-                { name: 'Beirut', subtitle: 'Beneath the Cedars', link: '/beirut-tours' }
+                { name: 'Medellín', subtitle: 'Beneath the Valley', link: '/experiences/medellin' },
+                { name: 'Buenos Aires', subtitle: 'Beneath the Furia', link: '/experiences/buenos-aires' },
+                { name: 'Rio de Janeiro', subtitle: 'Beneath the Hustle', link: '/experiences/rio' },
+                { name: 'Palermo', subtitle: 'Beneath the Sunhine', link: '/experiences/palermo' },
+                { name: 'Málaga', subtitle: 'Beneath the Onda', link: '/experiences/malaga' },
+                { name: 'Istanbul', subtitle: 'Beneath the Bridge', link: '/experiences/istanbul' },
+                { name: 'Beirut', subtitle: 'Beneath the Cedars', link: '/experiences/beirut' }
               ].map((destination, index) => (
                 <li key={index}>
-                  <a 
-                    href={destination.link} 
+                  <a
+                    href={destination.link}
                     className="block text-gray-400 transition-colors hover:text-[#D4A574] group"
                   >
                     <div className="text-sm sm:text-base font-medium group-hover:text-[#D4A574]">
@@ -122,8 +132,8 @@ export function ChefFooter() {
               <li className="flex items-start gap-2 sm:gap-3">
                 <Mail className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-[#D4A574] mt-0.5" />
                 <div>
-                  <a 
-                    href="mailto:charles@chefcharleswebb.com" 
+                  <a
+                    href="mailto:charles@chefcharleswebb.com"
                     className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574] break-all"
                   >
                     charles@chefcharleswebb.com
@@ -133,8 +143,8 @@ export function ChefFooter() {
               <li className="flex items-start gap-2 sm:gap-3">
                 <Phone className="h-4 w-4 sm:h-5 sm:w-5 flex-shrink-0 text-[#D4A574] mt-0.5" />
                 <div>
-                  <a 
-                    href="tel:+1-312-860-2188" 
+                  <a
+                    href="tel:+1-312-860-2188"
                     className="text-sm sm:text-base text-gray-400 transition-colors hover:text-[#D4A574]"
                   >
                     +1 (312) 860-2188
