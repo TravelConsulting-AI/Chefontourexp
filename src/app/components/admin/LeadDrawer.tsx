@@ -514,6 +514,11 @@ export function LeadDrawer({
                                 ) : (
                                     lead.calendly_link && (() => {
                                         const meeting = (lead.details as Record<string, unknown>)?.calendly_meeting as Record<string, string | null> | undefined;
+                                        const isApiUri = lead.calendly_link.includes('api.calendly.com');
+                                        const meetingHref = isApiUri
+                                            ? 'https://calendly.com/app/scheduled_events/user/me'
+                                            : lead.calendly_link;
+                                        const meetingLabel = isApiUri ? 'Open Calendly Dashboard →' : 'Join Meeting →';
                                         return (
                                             <div className="space-y-2">
                                                 <div className="flex items-start justify-between gap-4">
@@ -521,16 +526,19 @@ export function LeadDrawer({
                                                         Meeting
                                                     </span>
                                                     <a
-                                                        href={lead.calendly_link}
+                                                        href={meetingHref}
                                                         target="_blank"
                                                         rel="noopener noreferrer"
                                                         className="text-right text-sm font-medium text-[#D4A574] hover:underline"
                                                     >
-                                                        {lead.calendly_link.includes('api.calendly.com')
-                                                            ? 'View in Calendly →'
-                                                            : 'Join Meeting →'}
+                                                        {meetingLabel}
                                                     </a>
                                                 </div>
+                                                {meeting?.event_name && (
+                                                    <p className="text-sm font-medium text-[#1a1a1a]/80">
+                                                        {meeting.event_name}
+                                                    </p>
+                                                )}
                                                 {meeting?.start_time && (
                                                     <p className="text-sm text-[#1a1a1a]/70">
                                                         📅 {new Date(meeting.start_time).toLocaleDateString('en-US', {
