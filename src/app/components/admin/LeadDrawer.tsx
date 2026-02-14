@@ -497,36 +497,68 @@ export function LeadDrawer({
                                     </div>
                                 )}
 
-                                {/* Calendly Link */}
+                                {/* Calendly / Meeting Info */}
                                 {isEditing && draft ? (
                                     draft.calendly_link !== null && (
                                         <div>
-                                            <FieldLabel>Calendly Link</FieldLabel>
+                                            <FieldLabel>Meeting Link</FieldLabel>
                                             <input
                                                 type="url"
                                                 value={draft.calendly_link || ''}
                                                 onChange={(e) => updateDraft('calendly_link', e.target.value || null)}
-                                                placeholder="https://calendly.com/..."
+                                                placeholder="https://meet.google.com/..."
                                                 className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm text-[#1a1a1a] outline-none transition-colors focus:border-[#D4A574]"
                                             />
                                         </div>
                                     )
                                 ) : (
-                                    lead.calendly_link && (
-                                        <div className="flex items-start justify-between gap-4">
-                                            <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/40">
-                                                Calendly
-                                            </span>
-                                            <a
-                                                href={lead.calendly_link}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="text-right text-sm font-medium text-[#D4A574] hover:underline truncate max-w-[200px]"
-                                            >
-                                                View Event
-                                            </a>
-                                        </div>
-                                    )
+                                    lead.calendly_link && (() => {
+                                        const meeting = (lead.details as Record<string, unknown>)?.calendly_meeting as Record<string, string | null> | undefined;
+                                        return (
+                                            <div className="space-y-2">
+                                                <div className="flex items-start justify-between gap-4">
+                                                    <span className="shrink-0 text-xs font-medium uppercase tracking-wider text-[#1a1a1a]/40">
+                                                        Meeting
+                                                    </span>
+                                                    <a
+                                                        href={lead.calendly_link}
+                                                        target="_blank"
+                                                        rel="noopener noreferrer"
+                                                        className="text-right text-sm font-medium text-[#D4A574] hover:underline"
+                                                    >
+                                                        {lead.calendly_link.includes('api.calendly.com')
+                                                            ? 'View in Calendly →'
+                                                            : 'Join Meeting →'}
+                                                    </a>
+                                                </div>
+                                                {meeting?.start_time && (
+                                                    <p className="text-sm text-[#1a1a1a]/70">
+                                                        📅 {new Date(meeting.start_time).toLocaleDateString('en-US', {
+                                                            weekday: 'short', month: 'short', day: 'numeric', year: 'numeric'
+                                                        })} at {new Date(meeting.start_time).toLocaleTimeString('en-US', {
+                                                            hour: 'numeric', minute: '2-digit', timeZoneName: 'short'
+                                                        })}
+                                                    </p>
+                                                )}
+                                                {(meeting?.reschedule_url || meeting?.cancel_url) && (
+                                                    <div className="flex gap-3">
+                                                        {meeting.reschedule_url && (
+                                                            <a href={meeting.reschedule_url} target="_blank" rel="noopener noreferrer"
+                                                                className="text-xs text-[#1a1a1a]/40 hover:text-[#D4A574] transition-colors">
+                                                                Reschedule
+                                                            </a>
+                                                        )}
+                                                        {meeting.cancel_url && (
+                                                            <a href={meeting.cancel_url} target="_blank" rel="noopener noreferrer"
+                                                                className="text-xs text-red-400/70 hover:text-red-500 transition-colors">
+                                                                Cancel
+                                                            </a>
+                                                        )}
+                                                    </div>
+                                                )}
+                                            </div>
+                                        );
+                                    })()
                                 )}
 
                                 {/* Internal Notes */}
