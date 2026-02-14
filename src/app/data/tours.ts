@@ -25,7 +25,7 @@ export const tours = [
     duration: '6 Days / 5 Nights',
     image: 'https://images.unsplash.com/photo-1583422409516-2895a77efded?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=1200',
     link: '/experiences/barcelona',
-    published: false
+    published: true
   },
   {
     id: 'medellin',
