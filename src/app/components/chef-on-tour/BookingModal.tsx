@@ -1,5 +1,6 @@
 import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { X, ChevronUp, ChevronDown, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { insertLead } from '@/lib/insertLead';
 
@@ -352,7 +353,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
 
   const isTextInput = currentQuestion.type !== 'dropdown';
 
-  return (
+  return createPortal(
     <>
       <AnimatePresence>
         <motion.div
@@ -668,6 +669,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
           </motion.div>
         )}
       </AnimatePresence>
-    </>
+    </>,
+    document.body
   );
 }
