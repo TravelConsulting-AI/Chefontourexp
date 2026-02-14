@@ -730,57 +730,57 @@ export function LeadDrawer({
                                 )}
                                 <InfoRow label="Lead Type" value={lead.lead_type} />
                             </div>
+
+                            {/* ── Delete Lead (superadmin only, edit mode only) ── */}
+                            {isEditing && role === 'superadmin' && onDelete && (
+                                <div className="mt-6 border-t border-red-100 pt-4">
+                                    {!isConfirmingDelete ? (
+                                        <button
+                                            onClick={() => setIsConfirmingDelete(true)}
+                                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 hover:border-red-300"
+                                        >
+                                            <Trash2 className="h-4 w-4" />
+                                            Delete Lead
+                                        </button>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            <p className="text-center text-xs text-red-500 font-medium">
+                                                Are you sure? This cannot be undone.
+                                            </p>
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => setIsConfirmingDelete(false)}
+                                                    className="flex-1 rounded-lg border border-black/10 px-3 py-2 text-sm text-[#1a1a1a]/60 transition-colors hover:bg-black/5"
+                                                >
+                                                    Cancel
+                                                </button>
+                                                <button
+                                                    onClick={async () => {
+                                                        if (!lead) return;
+                                                        setIsDeleting(true);
+                                                        const result = await onDelete(lead.id);
+                                                        setIsDeleting(false);
+                                                        if (result.error) {
+                                                            toast.error(`Failed to delete: ${result.error}`);
+                                                        } else {
+                                                            toast.success('Lead deleted');
+                                                            onClose();
+                                                        }
+                                                    }}
+                                                    disabled={isDeleting}
+                                                    className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                                                >
+                                                    {isDeleting ? 'Deleting…' : 'Confirm Delete'}
+                                                </button>
+                                            </div>
+                                        </div>
+                                    )}
+                                </div>
+                            )}
                         </div>
                     </>
                 )}
             </div>
-
-            {/* ── Delete Lead (superadmin only, edit mode only) ── */}
-            {isEditing && role === 'superadmin' && onDelete && (
-                <div className="border-t border-black/5 px-6 py-4">
-                    {!isConfirmingDelete ? (
-                        <button
-                            onClick={() => setIsConfirmingDelete(true)}
-                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 hover:border-red-300"
-                        >
-                            <Trash2 className="h-4 w-4" />
-                            Delete Lead
-                        </button>
-                    ) : (
-                        <div className="space-y-2">
-                            <p className="text-center text-xs text-red-500 font-medium">
-                                Are you sure? This cannot be undone.
-                            </p>
-                            <div className="flex gap-2">
-                                <button
-                                    onClick={() => setIsConfirmingDelete(false)}
-                                    className="flex-1 rounded-lg border border-black/10 px-3 py-2 text-sm text-[#1a1a1a]/60 transition-colors hover:bg-black/5"
-                                >
-                                    Cancel
-                                </button>
-                                <button
-                                    onClick={async () => {
-                                        if (!lead) return;
-                                        setIsDeleting(true);
-                                        const result = await onDelete(lead.id);
-                                        setIsDeleting(false);
-                                        if (result.error) {
-                                            toast.error(`Failed to delete: ${result.error}`);
-                                        } else {
-                                            toast.success('Lead deleted');
-                                            onClose();
-                                        }
-                                    }}
-                                    disabled={isDeleting}
-                                    className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
-                                >
-                                    {isDeleting ? 'Deleting…' : 'Confirm Delete'}
-                                </button>
-                            </div>
-                        </div>
-                    )}
-                </div>
-            )}
         </>
     );
 }
