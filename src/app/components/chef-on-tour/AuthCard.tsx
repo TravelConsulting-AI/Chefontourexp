@@ -11,9 +11,11 @@ interface AuthCardProps {
     defaultView?: View;
     /** Where to navigate on successful sign-in (default: '/') */
     redirectTo?: string;
+    /** Hide the Sign Up tab (e.g. for admin/team login) */
+    hideSignUp?: boolean;
 }
 
-export function AuthCard({ defaultView = 'signin', redirectTo = '/' }: AuthCardProps) {
+export function AuthCard({ defaultView = 'signin', redirectTo = '/', hideSignUp = false }: AuthCardProps) {
     const { signIn, signUp, resetPassword } = useAuth();
     const navigate = useNavigate();
 
@@ -103,19 +105,21 @@ export function AuthCard({ defaultView = 'signin', redirectTo = '/' }: AuthCardP
                                     Sign In
                                 </Link>
                             )}
-                            {view === 'signup' ? (
-                                <button
-                                    className="flex-1 pb-3 text-sm font-medium border-b-2 border-[#D4A574] text-[#D4A574]"
-                                >
-                                    Sign Up
-                                </button>
-                            ) : (
-                                <Link
-                                    to="/signup"
-                                    className="flex-1 pb-3 text-sm font-medium text-white/50 hover:text-white/70 text-center transition-colors"
-                                >
-                                    Sign Up
-                                </Link>
+                            {!hideSignUp && (
+                                view === 'signup' ? (
+                                    <button
+                                        className="flex-1 pb-3 text-sm font-medium border-b-2 border-[#D4A574] text-[#D4A574]"
+                                    >
+                                        Sign Up
+                                    </button>
+                                ) : (
+                                    <Link
+                                        to="/signup"
+                                        className="flex-1 pb-3 text-sm font-medium text-white/50 hover:text-white/70 text-center transition-colors"
+                                    >
+                                        Sign Up
+                                    </Link>
+                                )
                             )}
                         </div>
 

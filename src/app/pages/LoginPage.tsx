@@ -18,7 +18,11 @@ export function LoginPage() {
                 />
             </Link>
 
-            <AuthCard defaultView="signin" redirectTo={redirectTo} />
+            <AuthCard
+                defaultView="signin"
+                redirectTo={redirectTo}
+                hideSignUp={redirectTo.startsWith('/admin')}
+            />
 
             {/* Home link */}
             <p className="mt-6 text-xs text-white/30">
