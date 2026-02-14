@@ -100,10 +100,11 @@ export function ChefFooter() {
             <h4 className="mb-4 sm:mb-6 font-semibold text-base sm:text-lg">Curated Experiences</h4>
             <ul className="space-y-3 sm:space-y-4">
               {[
+                { name: 'Barcelona', subtitle: 'Beneath the Surface', link: '/experiences/barcelona' },
                 { name: 'Medellín', subtitle: 'Beneath the Valley', link: '/experiences/medellin' },
                 { name: 'Buenos Aires', subtitle: 'Beneath the Furia', link: '/experiences/buenos-aires' },
                 { name: 'Rio de Janeiro', subtitle: 'Beneath the Hustle', link: '/experiences/rio' },
-                { name: 'Palermo', subtitle: 'Beneath the Sunhine', link: '/experiences/palermo' },
+                { name: 'Palermo', subtitle: 'Beneath the Sunshine', link: '/experiences/palermo' },
                 { name: 'Málaga', subtitle: 'Beneath the Onda', link: '/experiences/malaga' },
                 { name: 'Istanbul', subtitle: 'Beneath the Bridge', link: '/experiences/istanbul' },
                 { name: 'Beirut', subtitle: 'Beneath the Cedars', link: '/experiences/beirut' }

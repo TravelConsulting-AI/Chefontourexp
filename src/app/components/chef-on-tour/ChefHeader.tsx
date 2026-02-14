@@ -171,7 +171,7 @@ export function ChefHeader() {
                     className="block px-6 py-4 hover:bg-white/5 transition-colors border-b border-white/10"
                   >
                     <div className="font-bold text-white">Palermo</div>
-                    <div className="text-sm text-white/70 mt-0.5">Beneath the Sunhine</div>
+                    <div className="text-sm text-white/70 mt-0.5">Beneath the Sunshine</div>
                   </Link>
                   <Link
                     to="/experiences/malaga"
@@ -410,7 +410,7 @@ export function ChefHeader() {
                     className="block py-2"
                   >
                     <div className="font-bold text-white">Palermo</div>
-                    <div className="text-sm text-white/70">Beneath the Sunhine</div>
+                    <div className="text-sm text-white/70">Beneath the Sunshine</div>
                   </Link>
                   <Link
                     to="/experiences/malaga"
