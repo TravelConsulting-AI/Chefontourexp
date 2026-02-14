@@ -1,176 +1,90 @@
 import { motion } from 'motion/react';
 import { useInView } from '../hooks/useInView';
 import { Instagram, ExternalLink } from 'lucide-react';
-import { useEffect } from 'react';
 
 export function FollowSection() {
   const { ref, isInView } = useInView({ threshold: 0.1 });
 
-  // Load LightWidget script
-  useEffect(() => {
-    // Check if script is already loaded
-    if (!document.getElementById('lightwidget-script')) {
-      const script = document.createElement('script');
-      script.id = 'lightwidget-script';
-      script.src = 'https://cdn.lightwidget.com/widgets/lightwidget.js';
-      script.async = true;
-      document.body.appendChild(script);
-    }
-  }, []);
-
   return (
-    <section ref={ref} className="relative bg-[#F4F1EA] px-4 py-16 sm:py-24">
-      <div className="mx-auto max-w-7xl">
+    <section ref={ref} className="relative bg-[#F4F1EA] px-4 py-16 sm:py-24 overflow-hidden">
+      {/* Subtle pattern overlay */}
+      <div className="absolute inset-0 opacity-[0.03]">
+        <div className="absolute inset-0" style={{
+          backgroundImage: 'radial-gradient(circle at 2px 2px, #1a1a1a 1px, transparent 0)',
+          backgroundSize: '32px 32px'
+        }} />
+      </div>
+
+      <div className="relative mx-auto max-w-5xl">
         {/* Header */}
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8 }}
-          className="mb-8 sm:mb-12 text-center"
+          className="text-center mb-10 sm:mb-14"
         >
           <h2 className="mb-3 sm:mb-4 font-serif text-3xl sm:text-4xl md:text-5xl italic text-[#1a1a1a]">
-            Follow us on
+            Follow the Journey
           </h2>
-          <a
-            href="https://instagram.com/chefcharleswebb"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 font-sans text-base sm:text-lg text-[#1a1a1a] hover:text-[#D4A574] transition-colors"
-          >
-            <Instagram className="h-5 w-5 sm:h-6 sm:w-6" />
-            @chefcharleswebb
-          </a>
+          <p className="font-sans text-sm sm:text-base text-[#1a1a1a]/60 max-w-lg mx-auto">
+            Behind-the-scenes stories, culinary discoveries, and moments from around the world.
+          </p>
         </motion.div>
 
-        {/* LightWidget Instagram Feed */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
+        {/* Instagram Card */}
+        <motion.a
+          href="https://instagram.com/chefcharleswebb"
+          target="_blank"
+          rel="noopener noreferrer"
+          initial={{ opacity: 0, y: 20 }}
+          animate={isInView ? { opacity: 1, y: 0 } : {}}
           transition={{ duration: 0.8, delay: 0.2 }}
-          className="lightwidget-container"
+          className="group block mx-auto max-w-2xl"
         >
-          {/* 
-            SETUP INSTRUCTIONS:
-            1. Go to https://lightwidget.com/
-            2. Enter Instagram username: chefcharleswebb
-            3. Customize the widget:
-               - Layout: Grid
-               - Number of photos: 12
-               - Number of rows: 2
-               - Responsive: Yes
-            4. Copy the generated iframe code
-            5. Replace the iframe below with your custom widget code
-            
-            The current iframe is a placeholder. You'll get a unique widget ID from LightWidget.
-          */}
-          <iframe
-            src="https://cdn.lightwidget.com/widgets/YOUR_WIDGET_ID.html"
-            scrolling="no"
-            allowtransparency="true"
-            className="lightwidget-widget w-full border-0"
-            style={{ 
-              width: '100%', 
-              border: 0, 
-              overflow: 'hidden',
-              minHeight: '400px'
-            }}
-            title="Instagram Feed by LightWidget"
-          />
-        </motion.div>
+          <div className="relative rounded-2xl overflow-hidden bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] p-[2px]">
+            <div className="rounded-2xl bg-white px-6 sm:px-10 py-8 sm:py-12 flex flex-col sm:flex-row items-center gap-6 sm:gap-8">
+              {/* IG Icon */}
+              <div className="flex-shrink-0">
+                <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-2xl bg-gradient-to-br from-[#833AB4] via-[#FD1D1D] to-[#F77737] flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-300">
+                  <Instagram className="w-10 h-10 sm:w-12 sm:h-12 text-white" />
+                </div>
+              </div>
 
-        {/* CTA */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.8, delay: 0.6 }}
-          className="mt-8 sm:mt-12 text-center"
-        >
-          <a
-            href="https://instagram.com/chefcharleswebb"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 border border-[#1a1a1a] px-6 sm:px-8 py-2.5 sm:py-3 font-sans text-xs sm:text-sm uppercase tracking-wider text-[#1a1a1a] transition-all hover:bg-[#1a1a1a] hover:text-white"
-          >
-            <Instagram className="h-4 w-4" />
-            View Full Feed on Instagram
-            <ExternalLink className="h-3 w-3" />
-          </a>
-        </motion.div>
-
-        {/* Setup Instructions */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={isInView ? { opacity: 1 } : {}}
-          transition={{ duration: 0.8, delay: 0.8 }}
-          className="mt-8 text-center"
-        >
-          <details className="max-w-3xl mx-auto">
-            <summary className="font-sans text-xs text-gray-500 cursor-pointer hover:text-gray-700">
-              🔧 LightWidget Setup Instructions (Click to expand)
-            </summary>
-            <div className="mt-4 p-4 bg-white/50 rounded-lg text-left">
-              <p className="font-sans text-xs text-gray-600 mb-2">
-                <strong>How to activate your Instagram feed with LightWidget:</strong>
-              </p>
-              <ol className="font-sans text-xs text-gray-600 ml-4 list-decimal space-y-2">
-                <li>
-                  Visit <a href="https://lightwidget.com/" target="_blank" rel="noopener noreferrer" className="text-blue-600 hover:underline font-semibold">lightwidget.com</a>
-                </li>
-                <li>
-                  Enter your Instagram username: <code className="bg-gray-200 px-1 rounded">chefcharleswebb</code>
-                </li>
-                <li>
-                  Customize your widget settings:
-                  <ul className="ml-4 mt-1 list-disc space-y-1">
-                    <li><strong>Layout:</strong> Grid (recommended for this design)</li>
-                    <li><strong>Number of photos:</strong> 12 (displays beautifully as 6×2 on desktop)</li>
-                    <li><strong>Number of rows:</strong> 2</li>
-                    <li><strong>Responsive:</strong> Yes (auto-adjusts to 4×3 tablet, 2×6 mobile)</li>
-                    <li><strong>Spacing:</strong> Small (matches current design)</li>
-                  </ul>
-                </li>
-                <li>
-                  Click "Get Widget" to generate your custom embed code
-                </li>
-                <li>
-                  Copy the generated <code className="bg-gray-200 px-1 rounded">&lt;iframe&gt;</code> code
-                </li>
-                <li>
-                  Replace the placeholder iframe in <code className="bg-gray-200 px-1 rounded">/src/app/components/chef-on-tour/FollowSection.tsx</code> (around line 74)
-                </li>
-                <li>
-                  Update <code className="bg-gray-200 px-1 rounded">YOUR_WIDGET_ID</code> with your unique widget ID from LightWidget
-                </li>
-              </ol>
-              <p className="font-sans text-xs text-gray-600 mt-3">
-                <strong>Pricing:</strong> LightWidget offers a free plan with basic features. Premium plans start at $10/month for additional customization and no branding.
-              </p>
-              <p className="font-sans text-xs text-gray-600 mt-2">
-                <strong>Note:</strong> The widget is fully responsive and will automatically adjust to different screen sizes while maintaining the elegant design of your site.
-              </p>
+              {/* Content */}
+              <div className="text-center sm:text-left flex-1">
+                <p className="font-sans text-xs sm:text-sm uppercase tracking-widest text-[#1a1a1a]/40 mb-1">
+                  Instagram
+                </p>
+                <h3 className="font-serif text-2xl sm:text-3xl text-[#1a1a1a] mb-2">
+                  @chefcharleswebb
+                </h3>
+                <p className="font-sans text-sm text-[#1a1a1a]/60 mb-4 max-w-sm">
+                  Follow Chef Charles Webb for daily stories from kitchens, markets, and streets around the globe.
+                </p>
+                <span className="inline-flex items-center gap-2 font-sans text-xs sm:text-sm uppercase tracking-wider text-[#D4A574] group-hover:text-[#c08a5e] transition-colors">
+                  Follow on Instagram
+                  <ExternalLink className="h-3.5 w-3.5 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+                </span>
+              </div>
             </div>
-          </details>
+          </div>
+        </motion.a>
+
+        {/* Decorative quote */}
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={isInView ? { opacity: 1 } : {}}
+          transition={{ duration: 0.8, delay: 0.5 }}
+          className="mt-10 sm:mt-14 text-center"
+        >
+          <blockquote className="font-serif text-lg sm:text-xl italic text-[#1a1a1a]/50 max-w-xl mx-auto">
+            "Every dish tells a story. Every city has a soul. Come find both."
+          </blockquote>
+          <p className="font-sans text-xs text-[#1a1a1a]/30 mt-3 uppercase tracking-wider">
+            — Chef Charles Webb
+          </p>
         </motion.div>
       </div>
-
-      {/* Custom Styling for LightWidget Integration */}
-      <style dangerouslySetInnerHTML={{__html: `
-        .lightwidget-container {
-          max-width: 100%;
-          margin: 0 auto;
-        }
-        
-        /* Ensure LightWidget iframe is responsive */
-        .lightwidget-widget {
-          display: block;
-          width: 100% !important;
-        }
-        
-        /* Override LightWidget default spacing if needed */
-        .lightwidget-container iframe {
-          background: transparent;
-        }
-      `}} />
     </section>
   );
 }
