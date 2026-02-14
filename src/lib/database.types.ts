@@ -187,6 +187,7 @@ export type Database = {
         Row: {
           canonical_slug: string
           created_at: string
+          destination_label: string | null
           id: string
           slug: string
           title: string
@@ -195,6 +196,7 @@ export type Database = {
         Insert: {
           canonical_slug: string
           created_at?: string
+          destination_label?: string | null
           id?: string
           slug: string
           title: string
@@ -203,6 +205,7 @@ export type Database = {
         Update: {
           canonical_slug?: string
           created_at?: string
+          destination_label?: string | null
           id?: string
           slug?: string
           title?: string

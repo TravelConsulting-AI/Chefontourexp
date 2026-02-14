@@ -1,8 +1,9 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { X, ChevronUp, ChevronDown, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { insertLead } from '@/lib/insertLead';
+import { useDestinations } from '@/app/hooks/useDestinations';
 
 interface BookingModalProps {
   isOpen: boolean;
@@ -30,97 +31,93 @@ type Question = {
     | { type: 'text' | 'email' | 'phone'; placeholder: string }
   );
 
-const questions: Question[] = [
-  {
-    id: 1,
-    question: "What's your preferred destination?",
-    type: 'dropdown',
-    options: [
-      "Medellín, Colombia",
-      "Rio de Janeiro, Brazil",
-      "Barcelona, Spain",
-      "Palermo, Italy",
-      "Buenos Aires, Argentina",
-      "Málaga, Spain",
-      "Istanbul, Turkey",
-      "Beirut, Lebanon",
-      "Other"
-    ],
-    field: 'destination'
-  },
-  {
-    id: 2,
-    question: "Who are you creating this experience with?",
-    type: 'dropdown',
-    options: [
-      "A Group of Friends",
-      "Team / Incentive Experience",
-      "Family Trip",
-      "Solo Traveler",
-      "Couples Getaway"
-    ],
-    field: 'experienceType'
-  },
-  {
-    id: 3,
-    question: "What's your group size?",
-    type: 'dropdown',
-    options: [
-      "1 to 2",
-      "2 to 4",
-      "4 to 6",
-      "6+"
-    ],
-    field: 'groupSize'
-  },
-  {
-    id: 4,
-    question: "What's your first name?",
-    type: 'text',
-    placeholder: 'Type your answer here...',
-    field: 'firstName'
-  },
-  {
-    id: 5,
-    question: "What's your last name?",
-    type: 'text',
-    placeholder: 'Type your answer here...',
-    field: 'lastName'
-  },
-  {
-    id: 6,
-    question: "What's your email address?",
-    type: 'email',
-    placeholder: 'name@example.com',
-    field: 'email'
-  },
-  {
-    id: 7,
-    question: "What's the best number to reach you?",
-    type: 'phone',
-    placeholder: '(201) 555-0123',
-    field: 'phone'
-  },
-  {
-    id: 8,
-    question: "Schedule a call with our team?",
-    type: 'dropdown',
-    options: [
-      "Yes, schedule a call",
-      "No, I'll do it later"
-    ],
-    field: 'scheduleCall'
-  },
-  {
-    id: 9,
-    question: "Any additional comments?",
-    type: 'text',
-    placeholder: 'Type your answer here...',
-    field: 'comments'
-  }
-];
+/** Build the questions array, injecting dynamic destination options */
+function buildQuestions(destinationOptions: string[]): Question[] {
+  return [
+    {
+      id: 1,
+      question: "What's your preferred destination?",
+      type: 'dropdown',
+      options: destinationOptions,
+      field: 'destination'
+    },
+    {
+      id: 2,
+      question: "Who are you creating this experience with?",
+      type: 'dropdown',
+      options: [
+        "A Group of Friends",
+        "Team / Incentive Experience",
+        "Family Trip",
+        "Solo Traveler",
+        "Couples Getaway"
+      ],
+      field: 'experienceType'
+    },
+    {
+      id: 3,
+      question: "What's your group size?",
+      type: 'dropdown',
+      options: [
+        "1 to 2",
+        "2 to 4",
+        "4 to 6",
+        "6+"
+      ],
+      field: 'groupSize'
+    },
+    {
+      id: 4,
+      question: "What's your first name?",
+      type: 'text',
+      placeholder: 'Type your answer here...',
+      field: 'firstName'
+    },
+    {
+      id: 5,
+      question: "What's your last name?",
+      type: 'text',
+      placeholder: 'Type your answer here...',
+      field: 'lastName'
+    },
+    {
+      id: 6,
+      question: "What's your email address?",
+      type: 'email',
+      placeholder: 'name@example.com',
+      field: 'email'
+    },
+    {
+      id: 7,
+      question: "What's the best number to reach you?",
+      type: 'phone',
+      placeholder: '(201) 555-0123',
+      field: 'phone'
+    },
+    {
+      id: 8,
+      question: "Schedule a call with our team?",
+      type: 'dropdown',
+      options: [
+        "Yes, schedule a call",
+        "No, I'll do it later"
+      ],
+      field: 'scheduleCall'
+    },
+    {
+      id: 9,
+      question: "Any additional comments?",
+      type: 'text',
+      placeholder: 'Type your answer here...',
+      field: 'comments'
+    }
+  ];
+}
 
 export function BookingModal({ isOpen, onClose }: BookingModalProps) {
+  const { destinationOptions, resolveTourId } = useDestinations();
+  const questions = useMemo(() => buildQuestions(destinationOptions), [destinationOptions]);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
   const [formData, setFormData] = useState<FormData>({
@@ -143,7 +140,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const currentQuestion = questions[currentStep];
-  const currentValue = formData[currentQuestion.field];
+  const currentValue = currentQuestion ? formData[currentQuestion.field] : '';
 
   // Check if this is the final step (step 9, index 8)
   const isFinalStep = currentStep === questions.length - 1;
@@ -166,10 +163,13 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
+    // Resolve tourId directly from the selected destination label
+    const resolvedTourId = resolveTourId(formData.destination);
+
     const { error } = await insertLead({
       source: 'home',
       departureType: 'none',
-      tourId: null,
+      tourId: resolvedTourId,
       fixedDateId: null,
       customDepartureDate: null,
       customDepartureDateEnd: null,
@@ -182,7 +182,6 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
       phone: formData.phone,
       scheduleCall: formData.scheduleCall === 'Yes, schedule a call',
       comments: formData.comments,
-      // Pass the selected destination so insertLead can resolve tour_id
       destinationLabel: formData.destination,
     });
 
@@ -194,7 +193,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
     } else {
       setSubmitStatus('success');
     }
-  }, [formData, calendlyEventUrl]);
+  }, [formData, calendlyEventUrl, resolveTourId]);
 
   const handleNext = useCallback(() => {
     if (currentStep < questions.length - 1) {
@@ -439,7 +438,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                         ) : isFinalStep ? (
                           // Textarea for final step (comments)
                           <textarea
-                            placeholder={currentQuestion.type !== 'dropdown' ? currentQuestion.placeholder : ''}
+                            placeholder={(currentQuestion as any).placeholder ?? ''}
                             value={currentValue}
                             onChange={handleTextareaChange}
                             rows={3}
@@ -450,7 +449,7 @@ export function BookingModal({ isOpen, onClose }: BookingModalProps) {
                           // Regular Text/Email Input
                           <input
                             type={currentQuestion.type === 'email' ? 'email' : 'text'}
-                            placeholder={currentQuestion.type !== 'dropdown' ? currentQuestion.placeholder : ''}
+                            placeholder={(currentQuestion as any).placeholder ?? ''}
                             value={currentValue}
                             onChange={handleInputChange}
                             className="w-full bg-transparent text-[#D4A574]/60 text-base sm:text-lg px-0 py-2 sm:py-3 border-b border-[#D4A574]/30 hover:border-[#D4A574]/60 focus:border-[#D4A574] focus:text-[#D4A574] transition-colors outline-none placeholder:text-[#D4A574]/30"

@@ -1,10 +1,9 @@
 import { supabase } from './supabase';
 import type { Json } from './database.types';
-import { DESTINATION_SLUG_MAP } from './destinationMap';
 
 // ── Types ──
 
-export type LeadSource = 'home' | 'tour_fixed' | 'tour_custom' | 'reseller' | 'unknown';
+export type LeadSource = 'home' | 'contact' | 'tour_fixed' | 'tour_custom' | 'reseller' | 'unknown';
 export type DepartureType = 'fixed' | 'custom' | 'flexible' | 'none';
 
 export interface LeadPayload {
@@ -27,24 +26,22 @@ export interface LeadPayload {
     scheduleCall: boolean;
     comments: string;
 
-    // ── Optional: destination label from BookingModal (for resolving tour_id) ──
+    // ── Optional: destination label from BookingModal / ContactSection ──
     destinationLabel?: string;
 }
 
 /**
  * Resolve a human-readable destination label (e.g. "Málaga, Spain")
- * to a tour_id by looking up the canonical_slug in the tours table.
+ * to a tour_id by looking up the destination_label in the tours table.
+ * This is a fallback — callers should prefer passing tourId directly.
  */
 async function resolveTourIdFromDestination(
     destinationLabel: string
 ): Promise<string | null> {
-    const slug = DESTINATION_SLUG_MAP[destinationLabel];
-    if (!slug) return null;
-
     const { data } = await supabase
         .from('tours')
         .select('id')
-        .eq('canonical_slug', slug)
+        .eq('destination_label', destinationLabel)
         .single();
 
     return data?.id ?? null;

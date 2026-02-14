@@ -23,6 +23,7 @@ export function PalermoToursPage() {
         isOpen={isCustomDateModalOpen}
         onClose={() => setIsCustomDateModalOpen(false)}
         tourTitle="Palermo: Beneath the Sunshine"
+        tourSlug="palermo"
       />
     </div>
   );

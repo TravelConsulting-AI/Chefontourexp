@@ -9,7 +9,7 @@ export function RioToursPage() {
 
   return (
     <div className="min-h-screen bg-[#F4F1EA] overflow-x-hidden">
-      <FloatingCustomDateBar 
+      <FloatingCustomDateBar
         tourTitle="Rio de Janeiro: Beneath the Hustle"
         onCustomDateClick={() => setIsCustomDateModalOpen(true)}
       />
@@ -23,13 +23,14 @@ export function RioToursPage() {
         isOpen={isCustomDateModalOpen}
         onClose={() => setIsCustomDateModalOpen(false)}
         tourTitle="Rio de Janeiro: Beneath the Hustle"
+        tourSlug="rio-de-janeiro"
       />
     </div>
   );
 }
 
 // SECTION 0: FLOATING CUSTOM DATE BAR
-function FloatingCustomDateBar({ 
+function FloatingCustomDateBar({
   tourTitle,
   onCustomDateClick
 }: {
@@ -72,8 +73,8 @@ function HeroSection() {
   const { ref, isInView } = useInView({ threshold: 0.3 });
 
   return (
-    <section 
-      ref={ref} 
+    <section
+      ref={ref}
       className="relative h-screen w-full overflow-hidden bg-[#1A1A1A] pt-0 md:pt-[200px] lg:pt-[200px]"
     >
       {/* Background Image with Overlay */}
@@ -192,7 +193,7 @@ function PhilosophySection() {
           <p className="font-sans text-xl leading-relaxed text-[#111111]">
             With Charles Webb opening doors and local cultural ambassadors sharing stories forged in resilience and joy, this experience doesn't promise transformation.
           </p>
-          
+
           <p className="font-sans text-2xl leading-relaxed text-[#111111] font-medium">
             It simply creates the conditions for it.
           </p>

@@ -1,7 +1,9 @@
 import { motion, AnimatePresence } from 'motion/react';
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useInView } from '../hooks/useInView';
-import { Mail, Phone, ChevronUp, ChevronDown, X } from 'lucide-react';
+import { Mail, Phone, ChevronUp, ChevronDown, X, AlertCircle, Loader2 } from 'lucide-react';
+import { insertLead } from '@/lib/insertLead';
+import { useDestinations } from '@/app/hooks/useDestinations';
 
 interface FormData {
   destination: string;
@@ -20,101 +22,97 @@ type Question = {
   question: string;
   field: keyof FormData;
 } & (
-  | { type: 'dropdown'; options: string[] }
-  | { type: 'text' | 'email' | 'phone'; placeholder: string }
-);
+    | { type: 'dropdown'; options: string[] }
+    | { type: 'text' | 'email' | 'phone'; placeholder: string }
+  );
 
-const questions: Question[] = [
-  {
-    id: 1,
-    question: "What's your preferred destination?",
-    type: 'dropdown',
-    options: [
-      "Medellín, Colombia",
-      "Rio de Janeiro, Brazil",
-      "Barcelona, Spain",
-      "Palermo, Italy",
-      "Buenos Aires, Argentina",
-      "Málaga, Spain",
-      "Istanbul, Turkey",
-      "Beirut, Lebanon",
-      "Other"
-    ],
-    field: 'destination'
-  },
-  {
-    id: 2,
-    question: "Who are you creating this experience with?",
-    type: 'dropdown',
-    options: [
-      "A Group of Friends",
-      "Team / Incentive Experience",
-      "Family Trip",
-      "Solo Traveler",
-      "Couples Getaway"
-    ],
-    field: 'experienceType'
-  },
-  {
-    id: 3,
-    question: "What's your group size?",
-    type: 'dropdown',
-    options: [
-      "1 to 2",
-      "2 to 4",
-      "4 to 6",
-      "6+"
-    ],
-    field: 'groupSize'
-  },
-  {
-    id: 4,
-    question: "What's your first name?",
-    type: 'text',
-    placeholder: 'Type your answer here...',
-    field: 'firstName'
-  },
-  {
-    id: 5,
-    question: "What's your last name?",
-    type: 'text',
-    placeholder: 'Type your answer here...',
-    field: 'lastName'
-  },
-  {
-    id: 6,
-    question: "What's your email address?",
-    type: 'email',
-    placeholder: 'name@example.com',
-    field: 'email'
-  },
-  {
-    id: 7,
-    question: "What's the best number to reach you?",
-    type: 'phone',
-    placeholder: '(201) 555-0123',
-    field: 'phone'
-  },
-  {
-    id: 8,
-    question: "Schedule a call with our team?",
-    type: 'dropdown',
-    options: [
-      "Yes, schedule a call",
-      "No, I'll do it later"
-    ],
-    field: 'scheduleCall'
-  },
-  {
-    id: 9,
-    question: "Any additional comments?",
-    type: 'text',
-    placeholder: 'Type your answer here...',
-    field: 'comments'
-  }
-];
+/** Build the questions array, injecting dynamic destination options */
+function buildQuestions(destinationOptions: string[]): Question[] {
+  return [
+    {
+      id: 1,
+      question: "What's your preferred destination?",
+      type: 'dropdown',
+      options: destinationOptions,
+      field: 'destination'
+    },
+    {
+      id: 2,
+      question: "Who are you creating this experience with?",
+      type: 'dropdown',
+      options: [
+        "A Group of Friends",
+        "Team / Incentive Experience",
+        "Family Trip",
+        "Solo Traveler",
+        "Couples Getaway"
+      ],
+      field: 'experienceType'
+    },
+    {
+      id: 3,
+      question: "What's your group size?",
+      type: 'dropdown',
+      options: [
+        "1 to 2",
+        "2 to 4",
+        "4 to 6",
+        "6+"
+      ],
+      field: 'groupSize'
+    },
+    {
+      id: 4,
+      question: "What's your first name?",
+      type: 'text',
+      placeholder: 'Type your answer here...',
+      field: 'firstName'
+    },
+    {
+      id: 5,
+      question: "What's your last name?",
+      type: 'text',
+      placeholder: 'Type your answer here...',
+      field: 'lastName'
+    },
+    {
+      id: 6,
+      question: "What's your email address?",
+      type: 'email',
+      placeholder: 'name@example.com',
+      field: 'email'
+    },
+    {
+      id: 7,
+      question: "What's the best number to reach you?",
+      type: 'phone',
+      placeholder: '(201) 555-0123',
+      field: 'phone'
+    },
+    {
+      id: 8,
+      question: "Schedule a call with our team?",
+      type: 'dropdown',
+      options: [
+        "Yes, schedule a call",
+        "No, I'll do it later"
+      ],
+      field: 'scheduleCall'
+    },
+    {
+      id: 9,
+      question: "Any additional comments?",
+      type: 'text',
+      placeholder: 'Type your answer here...',
+      field: 'comments'
+    }
+  ];
+}
 
 function EmbeddedBookingForm() {
+  const { destinationOptions, resolveTourId } = useDestinations();
+  const questions = useMemo(() => buildQuestions(destinationOptions), [destinationOptions]);
+
   const [currentStep, setCurrentStep] = useState(0);
   const [direction, setDirection] = useState(0);
   const [formData, setFormData] = useState<FormData>({
@@ -130,15 +128,18 @@ function EmbeddedBookingForm() {
   });
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
   const [showCalendlyModal, setShowCalendlyModal] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [calendlyEventUrl, setCalendlyEventUrl] = useState<string | null>(null);
   const [isComplete, setIsComplete] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const currentQuestion = questions[currentStep];
-  const currentValue = formData[currentQuestion.field];
+  const currentValue = currentQuestion ? formData[currentQuestion.field] : '';
   const isFinalStep = currentStep === questions.length - 1;
   const isTextInput = currentQuestion && currentQuestion.type !== 'dropdown';
-  
+
   const calendlyUrl = `https://calendly.com/chefontour?hide_landing_page_details=1&hide_gdpr_banner=1&name=${encodeURIComponent(`${formData.firstName} ${formData.lastName}`)}&email=${encodeURIComponent(formData.email)}`;
 
   useEffect(() => {
@@ -152,16 +153,52 @@ function EmbeddedBookingForm() {
     };
   }, [showCalendlyModal]);
 
+  const handleSubmitLead = useCallback(async () => {
+    setIsSubmitting(true);
+    setSubmitStatus('idle');
+
+    const resolvedTourId = resolveTourId(formData.destination);
+
+    const { error } = await insertLead({
+      source: 'contact',
+      departureType: 'none',
+      tourId: resolvedTourId,
+      fixedDateId: null,
+      customDepartureDate: null,
+      customDepartureDateEnd: null,
+      calendlyLink: calendlyEventUrl,
+      experienceType: formData.experienceType,
+      groupSize: formData.groupSize,
+      firstName: formData.firstName,
+      lastName: formData.lastName,
+      email: formData.email,
+      phone: formData.phone,
+      scheduleCall: formData.scheduleCall === 'Yes, schedule a call',
+      comments: formData.comments,
+      destinationLabel: formData.destination,
+    });
+
+    setIsSubmitting(false);
+
+    if (error) {
+      console.error('Lead submission error:', error);
+      setSubmitStatus('error');
+    } else {
+      setSubmitStatus('success');
+      setIsComplete(true);
+    }
+  }, [formData, calendlyEventUrl, resolveTourId]);
+
   const handleNext = useCallback(() => {
     if (currentStep < questions.length - 1) {
       setDirection(1);
       setIsDropdownOpen(false);
       setCurrentStep(currentStep + 1);
     } else {
-      console.log('Booking form completed', formData);
-      setIsComplete(true);
+      // Final step — submit the lead
+      handleSubmitLead();
     }
-  }, [currentStep, formData]);
+  }, [currentStep, questions.length, handleSubmitLead]);
 
   const handlePrevious = useCallback(() => {
     if (currentStep > 0) {
@@ -174,7 +211,7 @@ function EmbeddedBookingForm() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (showCalendlyModal || isComplete) return;
-      
+
       if (e.key === 'Enter' && currentValue && !isDropdownOpen) {
         handleNext();
       } else if (e.key === 'ArrowUp') {
@@ -189,18 +226,18 @@ function EmbeddedBookingForm() {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [currentValue, handleNext, handlePrevious, showCalendlyModal, isDropdownOpen, isComplete]);
-  
+
   useEffect(() => {
     if (showCalendlyModal) {
       const existingScript = document.querySelector('script[src="https://assets.calendly.com/assets/external/widget.js"]');
-      
+
       if (!existingScript) {
         const script = document.createElement('script');
         script.src = 'https://assets.calendly.com/assets/external/widget.js';
         script.type = 'text/javascript';
         script.async = true;
         document.body.appendChild(script);
-        
+
         return () => {
           if (document.body.contains(script)) {
             document.body.removeChild(script);
@@ -214,6 +251,8 @@ function EmbeddedBookingForm() {
     const handleCalendlyEvent = (e: MessageEvent) => {
       if (e.data.event && e.data.event === 'calendly.event_scheduled') {
         console.log('Calendly meeting scheduled!', e.data);
+        const eventUrl = e.data.payload?.event?.uri ?? null;
+        setCalendlyEventUrl(eventUrl);
         setTimeout(() => {
           setShowCalendlyModal(false);
           handleNext();
@@ -238,7 +277,7 @@ function EmbeddedBookingForm() {
           inputRef.current.focus();
         }
       }, 600);
-      
+
       return () => clearTimeout(timer);
     }
   }, [currentStep, currentQuestion, isFinalStep, isComplete]);
@@ -249,17 +288,17 @@ function EmbeddedBookingForm() {
       [currentQuestion.field]: option
     });
     setIsDropdownOpen(false);
-    
+
     const isStep8 = currentStep === 7;
     const wantsToSchedule = option === "Yes, schedule a call";
-    
+
     if (isStep8 && wantsToSchedule) {
       setTimeout(() => {
         setShowCalendlyModal(true);
       }, 300);
       return;
     }
-    
+
     setTimeout(() => {
       handleNext();
     }, 300);
@@ -295,6 +334,9 @@ function EmbeddedBookingForm() {
     });
     setIsComplete(false);
     setIsDropdownOpen(false);
+    setIsSubmitting(false);
+    setSubmitStatus('idle');
+    setCalendlyEventUrl(null);
   };
 
   const slideVariants = {
@@ -434,7 +476,7 @@ function EmbeddedBookingForm() {
                         ref={inputRef}
                       />
                     )}
-                    
+
                     <motion.div
                       initial={{ opacity: 0, y: 10 }}
                       animate={{ opacity: 1, y: 0 }}
@@ -443,16 +485,20 @@ function EmbeddedBookingForm() {
                     >
                       <motion.button
                         onClick={handleNext}
-                        disabled={!isFinalStep && !currentValue}
-                        className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${
-                          (!isFinalStep && !currentValue)
-                            ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                            : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
-                        }`}
-                        whileHover={(!isFinalStep && !currentValue) ? {} : { scale: 1.02 }}
-                        whileTap={(!isFinalStep && !currentValue) ? {} : { scale: 0.98 }}
+                        disabled={isSubmitting || (!isFinalStep && !currentValue)}
+                        className={`px-6 sm:px-8 py-2.5 sm:py-3 rounded-lg text-sm font-medium transition-all ${(isSubmitting || (!isFinalStep && !currentValue))
+                          ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+                          : 'bg-[#D4A574] text-[#3a4157] hover:bg-[#C19563]'
+                          }`}
+                        whileHover={(isSubmitting || (!isFinalStep && !currentValue)) ? {} : { scale: 1.02 }}
+                        whileTap={(isSubmitting || (!isFinalStep && !currentValue)) ? {} : { scale: 0.98 }}
                       >
-                        {isFinalStep ? 'Submit Request' : 'OK'}
+                        {isSubmitting ? (
+                          <span className="flex items-center gap-2">
+                            <Loader2 className="h-4 w-4 animate-spin" />
+                            Submitting…
+                          </span>
+                        ) : isFinalStep ? 'Submit Request' : 'OK'}
                       </motion.button>
                       {!isFinalStep && (
                         <span className="text-[#D4A574]/40 text-xs sm:text-sm hidden sm:inline">
@@ -461,19 +507,14 @@ function EmbeddedBookingForm() {
                       )}
                     </motion.div>
 
-                    {isFinalStep && (
+                    {isFinalStep && submitStatus === 'error' && (
                       <motion.div
-                        initial={{ opacity: 0, y: 20 }}
+                        initial={{ opacity: 0, y: 10 }}
                         animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.8 }}
-                        className="mt-8 sm:mt-12 space-y-2"
+                        className="mt-4 flex items-center gap-2 text-red-400 text-sm"
                       >
-                        <p className="text-[#D4A574]/90 text-base sm:text-lg">
-                          Looking forward to creating magic together!
-                        </p>
-                        <p className="text-[#D4A574]/70 text-sm sm:text-base">
-                          We'll be in touch soon
-                        </p>
+                        <AlertCircle className="h-4 w-4" />
+                        Something went wrong. Please try again.
                       </motion.div>
                     )}
                   </div>
@@ -487,9 +528,8 @@ function EmbeddedBookingForm() {
                         {currentValue || 'Type or select an option'}
                       </span>
                       <ChevronUp
-                        className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${
-                          isDropdownOpen ? 'rotate-180' : ''
-                        }`}
+                        className={`h-4 w-4 sm:h-5 sm:w-5 text-[#D4A574]/60 transition-transform ${isDropdownOpen ? 'rotate-180' : ''
+                          }`}
                       />
                     </button>
 
@@ -533,11 +573,10 @@ function EmbeddedBookingForm() {
           <button
             onClick={handlePrevious}
             disabled={currentStep === 0}
-            className={`p-2 sm:p-3 rounded-lg transition-all ${
-              currentStep === 0
-                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-            }`}
+            className={`p-2 sm:p-3 rounded-lg transition-all ${currentStep === 0
+              ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+              : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+              }`}
             aria-label="Previous question"
           >
             <ChevronUp className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -545,11 +584,10 @@ function EmbeddedBookingForm() {
           <button
             onClick={handleNext}
             disabled={!currentValue}
-            className={`p-2 sm:p-3 rounded-lg transition-all ${
-              !currentValue
-                ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
-                : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
-            }`}
+            className={`p-2 sm:p-3 rounded-lg transition-all ${!currentValue
+              ? 'bg-[#D4A574]/20 text-[#D4A574]/40 cursor-not-allowed'
+              : 'bg-[#D4A574]/30 text-[#D4A574] hover:bg-[#D4A574]/40'
+              }`}
             aria-label="Next question"
           >
             <ChevronDown className="h-4 w-4 sm:h-5 sm:w-5" />
@@ -624,7 +662,7 @@ export function ContactSection() {
           >
             <h3 className="mb-6 sm:mb-8 text-2xl sm:text-3xl font-serif">Let's Plan Your Journey</h3>
             <p className="mb-6 sm:mb-8 text-base sm:text-lg text-gray-700">
-              Whether you're ready to book or just exploring options, our team is here to help 
+              Whether you're ready to book or just exploring options, our team is here to help
               craft the perfect culinary adventure tailored to your interests.
             </p>
 
@@ -636,8 +674,8 @@ export function ContactSection() {
                 </div>
                 <div>
                   <div className="mb-1 font-semibold text-sm sm:text-base">Email Us</div>
-                  <a 
-                    href="mailto:charles@chefcharleswebb.com" 
+                  <a
+                    href="mailto:charles@chefcharleswebb.com"
                     className="text-sm sm:text-base text-gray-600 transition-colors hover:text-[#D4A574]"
                   >
                     charles@chefcharleswebb.com
@@ -652,8 +690,8 @@ export function ContactSection() {
                 </div>
                 <div>
                   <div className="mb-1 font-semibold text-sm sm:text-base">Call Us</div>
-                  <a 
-                    href="tel:+1-312-860-2188" 
+                  <a
+                    href="tel:+1-312-860-2188"
                     className="text-sm sm:text-base text-gray-600 transition-colors hover:text-[#D4A574]"
                   >
                     +1 (312) 860-2188
@@ -667,7 +705,7 @@ export function ContactSection() {
             <div className="mt-6 sm:mt-8 rounded-lg bg-[#F8F6F3] p-4 sm:p-6">
               <h4 className="mb-2 font-semibold text-sm sm:text-base">Quick Response Guaranteed</h4>
               <p className="text-sm sm:text-base text-gray-700">
-                We typically respond to all inquiries within 24 hours. For urgent requests, 
+                We typically respond to all inquiries within 24 hours. For urgent requests,
                 please call us directly.
               </p>
             </div>

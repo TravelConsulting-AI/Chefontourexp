@@ -2,12 +2,14 @@ import { motion, AnimatePresence } from 'motion/react';
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { X, ChevronUp, ChevronDown, ChevronLeft, ChevronRight, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { insertLead } from '@/lib/insertLead';
+import { supabase } from '@/lib/supabase';
 
 interface CustomDateModalProps {
   isOpen: boolean;
   onClose: () => void;
   tourTitle: string;
   tourId?: string | null;
+  tourSlug?: string;
 }
 
 interface FormData {
@@ -313,7 +315,8 @@ function Calendar({
   );
 }
 
-export function CustomDateModal({ isOpen, onClose, tourTitle, tourId }: CustomDateModalProps) {
+export function CustomDateModal({ isOpen, onClose, tourTitle, tourId, tourSlug }: CustomDateModalProps) {
+  const [resolvedTourId, setResolvedTourId] = useState<string | null>(tourId ?? null);
   const [currentStep, setCurrentStep] = useState(-1); // -1 for calendar step
   const [direction, setDirection] = useState(0);
   const [selectedStartDate, setSelectedStartDate] = useState<Date | null>(null);
@@ -384,6 +387,25 @@ export function CustomDateModal({ isOpen, onClose, tourTitle, tourId }: CustomDa
     }
   }, [isOpen]);
 
+  // Resolve tour_id from slug when not explicitly provided
+  useEffect(() => {
+    if (tourId) {
+      setResolvedTourId(tourId);
+      return;
+    }
+    if (!tourSlug) return;
+    let cancelled = false;
+    supabase
+      .from('tours')
+      .select('id')
+      .eq('canonical_slug', tourSlug)
+      .single()
+      .then(({ data }) => {
+        if (!cancelled && data?.id) setResolvedTourId(data.id);
+      });
+    return () => { cancelled = true; };
+  }, [tourId, tourSlug]);
+
   const handleSubmitLead = useCallback(async () => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
@@ -391,7 +413,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle, tourId }: CustomDa
     const { error } = await insertLead({
       source: 'tour_custom',
       departureType: 'custom',
-      tourId: tourId ?? null,
+      tourId: resolvedTourId,
       fixedDateId: null,
       customDepartureDate: selectedStartDate?.toISOString().split('T')[0] ?? null,
       customDepartureDateEnd: selectedEndDate?.toISOString().split('T')[0] ?? null,
@@ -414,7 +436,7 @@ export function CustomDateModal({ isOpen, onClose, tourTitle, tourId }: CustomDa
     } else {
       setSubmitStatus('success');
     }
-  }, [formData, tourId, selectedStartDate, selectedEndDate, calendlyEventUrl]);
+  }, [formData, resolvedTourId, selectedStartDate, selectedEndDate, calendlyEventUrl]);
 
   const handleNext = useCallback(() => {
     if (isCalendarStep && selectedStartDate && selectedEndDate) {
