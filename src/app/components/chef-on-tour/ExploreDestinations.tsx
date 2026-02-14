@@ -34,7 +34,7 @@ export function ExploreDestinations() {
   useEffect(() => {
     const updateCardsPerSlide = () => {
       if (window.innerWidth >= 1024) {
-        setCardsPerSlide(5); // Desktop: 5 cards
+        setCardsPerSlide(4); // Desktop: 4 cards
       } else if (window.innerWidth >= 768) {
         setCardsPerSlide(4); // Tablet: 4 cards
       } else {
@@ -56,7 +56,7 @@ export function ExploreDestinations() {
     const handleKeyDown = (event: KeyboardEvent) => {
       // Only enable on desktop (lg breakpoint)
       if (window.innerWidth < 1024) return;
-      
+
       if (event.key === 'ArrowLeft' && canGoBack) {
         event.preventDefault();
         handlePrev();
@@ -96,13 +96,13 @@ export function ExploreDestinations() {
 
   const handleDragEnd = (event: any, info: any) => {
     const swipeThreshold = 50;
-    
+
     // Hide hint on swipe
     if (showSwipeHint && (Math.abs(info.offset.x) > 20)) {
       setShowSwipeHint(false);
       localStorage.setItem('hasSeenDestinationsSwipeHint', 'true');
     }
-    
+
     if (info.offset.x < -swipeThreshold && canGoForward) {
       handleNext();
     } else if (info.offset.x > swipeThreshold && canGoBack) {
@@ -136,23 +136,23 @@ export function ExploreDestinations() {
           </p>
         </motion.div>
 
-        {/* Desktop: Horizontal Accordion (5 cards) */}
+        {/* Desktop: Horizontal Accordion (4 cards) */}
         <div className="hidden lg:block">
           <div className="flex gap-2 h-[600px]">
-            {destinations.slice(currentSlide * 5, (currentSlide + 1) * 5).map((destination, index) => {
+            {destinations.slice(currentSlide * 4, (currentSlide + 1) * 4).map((destination, index) => {
               const isExpanded = expandedIndex === index;
-              
+
               return (
                 <motion.div
                   key={destination.name}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { 
-                    opacity: 1, 
+                  animate={isInView ? {
+                    opacity: 1,
                     y: 0,
-                    width: isExpanded ? '40%' : '15%'
+                    width: isExpanded ? '40%' : '20%'
                   } : {}}
-                  transition={{ 
-                    duration: 0.6, 
+                  transition={{
+                    duration: 0.6,
                     delay: index * 0.1,
                     width: { duration: 0.5, ease: 'easeInOut' }
                   }}
@@ -168,11 +168,10 @@ export function ExploreDestinations() {
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     {/* Gradient Overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-t transition-opacity duration-500 ${
-                      isExpanded 
-                        ? 'from-black/90 via-black/50 to-black/30' 
-                        : 'from-black/80 via-black/40 to-transparent'
-                    }`} />
+                    <div className={`absolute inset-0 bg-gradient-to-t transition-opacity duration-500 ${isExpanded
+                      ? 'from-black/90 via-black/50 to-black/30'
+                      : 'from-black/80 via-black/40 to-transparent'
+                      }`} />
                   </div>
 
                   {/* Content */}
@@ -260,8 +259,8 @@ export function ExploreDestinations() {
                 border border-white/20
                 flex items-center justify-center
                 transition-all duration-300
-                ${canGoBack 
-                  ? 'text-white/90 hover:bg-black/80 hover:border-[#D4A574]/60 cursor-pointer' 
+                ${canGoBack
+                  ? 'text-white/90 hover:bg-black/80 hover:border-[#D4A574]/60 cursor-pointer'
                   : 'text-white/30 cursor-not-allowed opacity-40'
                 }
               `}
@@ -282,8 +281,8 @@ export function ExploreDestinations() {
                 border border-white/20
                 flex items-center justify-center
                 transition-all duration-300
-                ${canGoForward 
-                  ? 'text-white/90 hover:bg-black/80 hover:border-[#D4A574]/60 cursor-pointer' 
+                ${canGoForward
+                  ? 'text-white/90 hover:bg-black/80 hover:border-[#D4A574]/60 cursor-pointer'
                   : 'text-white/30 cursor-not-allowed opacity-40'
                 }
               `}
@@ -305,18 +304,18 @@ export function ExploreDestinations() {
           >
             {destinations.slice(currentSlide * 4, (currentSlide + 1) * 4).map((destination, index) => {
               const isExpanded = expandedIndex === index;
-              
+
               return (
                 <motion.div
                   key={destination.name}
                   initial={{ opacity: 0, y: 20 }}
-                  animate={isInView ? { 
-                    opacity: 1, 
+                  animate={isInView ? {
+                    opacity: 1,
                     y: 0,
                     width: isExpanded ? '40%' : '20%'
                   } : {}}
-                  transition={{ 
-                    duration: 0.6, 
+                  transition={{
+                    duration: 0.6,
                     delay: index * 0.1,
                     width: { duration: 0.5, ease: 'easeInOut' }
                   }}
@@ -332,11 +331,10 @@ export function ExploreDestinations() {
                       className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
                     />
                     {/* Gradient Overlay */}
-                    <div className={`absolute inset-0 bg-gradient-to-t transition-opacity duration-500 ${
-                      isExpanded 
-                        ? 'from-black/90 via-black/50 to-black/30' 
-                        : 'from-black/80 via-black/40 to-transparent'
-                    }`} />
+                    <div className={`absolute inset-0 bg-gradient-to-t transition-opacity duration-500 ${isExpanded
+                      ? 'from-black/90 via-black/50 to-black/30'
+                      : 'from-black/80 via-black/40 to-transparent'
+                      }`} />
                   </div>
 
                   {/* Content */}
@@ -423,8 +421,8 @@ export function ExploreDestinations() {
                 border border-white/15
                 flex items-center justify-center
                 transition-all duration-300
-                ${canGoBack 
-                  ? 'text-white/80 active:bg-black/70 active:border-[#D4A574]/40 cursor-pointer' 
+                ${canGoBack
+                  ? 'text-white/80 active:bg-black/70 active:border-[#D4A574]/40 cursor-pointer'
                   : 'text-white/20 cursor-not-allowed opacity-30'
                 }
               `}
@@ -444,8 +442,8 @@ export function ExploreDestinations() {
                 border border-white/15
                 flex items-center justify-center
                 transition-all duration-300
-                ${canGoForward 
-                  ? 'text-white/80 active:bg-black/70 active:border-[#D4A574]/40 cursor-pointer' 
+                ${canGoForward
+                  ? 'text-white/80 active:bg-black/70 active:border-[#D4A574]/40 cursor-pointer'
                   : 'text-white/20 cursor-not-allowed opacity-30'
                 }
               `}
@@ -464,11 +462,10 @@ export function ExploreDestinations() {
                   setCurrentSlide(idx);
                   setExpandedIndex(0);
                 }}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx === currentSlide 
-                    ? 'w-8 bg-[#D4A574]' 
-                    : 'w-1.5 bg-white/30 hover:bg-white/50'
-                }`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide
+                  ? 'w-8 bg-[#D4A574]'
+                  : 'w-1.5 bg-white/30 hover:bg-white/50'
+                  }`}
                 aria-label={`Go to slide ${idx + 1}`}
               />
             ))}
@@ -488,14 +485,14 @@ export function ExploreDestinations() {
                 className="absolute bottom-20 left-1/2 -translate-x-1/2 z-10 pointer-events-none"
               >
                 <motion.div
-                  animate={{ 
+                  animate={{
                     x: [0, 8, 0],
                     opacity: [0.6, 1, 0.6]
                   }}
-                  transition={{ 
-                    duration: 2, 
-                    repeat: Infinity, 
-                    ease: "easeInOut" 
+                  transition={{
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
                   }}
                   className="flex items-center gap-2 bg-black/80 backdrop-blur-md px-4 py-2 rounded-full border border-white/20"
                 >
@@ -519,22 +516,22 @@ export function ExploreDestinations() {
               {destinations.map((destination, index) => {
                 const isCurrentCard = index === currentSlide;
                 const isNextCard = index === currentSlide + 1;
-                
+
                 return (
                   <motion.div
                     key={destination.name}
                     initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ 
+                    animate={{
                       opacity: isCurrentCard ? 1 : (isNextCard ? 0.5 : 0.3),
                       scale: isCurrentCard ? 1 : 0.9,
                       x: `${-currentSlide * 100}%`
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 0.5,
                       ease: 'easeInOut'
                     }}
                     className="relative overflow-hidden rounded-lg h-[500px] flex-shrink-0"
-                    style={{ 
+                    style={{
                       width: 'calc(100% - 80px)', // Leave room for peek
                       pointerEvents: isCurrentCard ? 'auto' : 'none'
                     }}
@@ -602,11 +599,10 @@ export function ExploreDestinations() {
               <button
                 key={idx}
                 onClick={() => setCurrentSlide(idx)}
-                className={`h-1.5 rounded-full transition-all duration-300 ${
-                  idx === currentSlide 
-                    ? 'w-8 bg-[#D4A574]' 
-                    : 'w-1.5 bg-white/30 active:bg-white/50'
-                }`}
+                className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentSlide
+                  ? 'w-8 bg-[#D4A574]'
+                  : 'w-1.5 bg-white/30 active:bg-white/50'
+                  }`}
                 aria-label={`Go to destination ${idx + 1}`}
               />
             ))}
