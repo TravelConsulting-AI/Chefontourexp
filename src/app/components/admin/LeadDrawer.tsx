@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Link } from 'react-router-dom';
-import { X, Pencil, Save, XCircle, ChevronDown, ChevronRight } from 'lucide-react';
+import { X, Pencil, Save, XCircle, ChevronDown, ChevronRight, Trash2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { StatusBadge } from '@/app/components/ui/StatusBadge';
 import { StatusDropdown } from './StatusDropdown';
@@ -117,6 +117,7 @@ interface LeadDrawerProps {
     onClose: () => void;
     onStatusChange: (leadId: string, newStatus: LeadStatus) => Promise<{ error: string | null }>;
     onSave: (leadId: string, payload: LeadUpdatePayload) => Promise<{ error: string | null }>;
+    onDelete?: (leadId: string) => Promise<{ error: string | null }>;
     tours: TourOption[];
     getSchedulesForTour: (tourId: string | null) => ScheduleOption[];
 }
@@ -128,6 +129,7 @@ export function LeadDrawer({
     onClose,
     onStatusChange,
     onSave,
+    onDelete,
     tours,
     getSchedulesForTour,
 }: LeadDrawerProps) {
@@ -139,6 +141,8 @@ export function LeadDrawer({
     const [draft, setDraft] = useState<DrawerDraft | null>(null);
     const [isSaving, setIsSaving] = useState(false);
     const [validationError, setValidationError] = useState<string | null>(null);
+    const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
+    const [isDeleting, setIsDeleting] = useState(false);
 
     // Raw payload collapse
     const [isRawOpen, setIsRawOpen] = useState(false);
@@ -149,6 +153,7 @@ export function LeadDrawer({
         setDraft(null);
         setValidationError(null);
         setIsRawOpen(false);
+        setIsConfirmingDelete(false);
     }, [lead?.id]);
 
     // Close on Escape key
@@ -729,6 +734,53 @@ export function LeadDrawer({
                     </>
                 )}
             </div>
+
+            {/* ── Delete Lead (superadmin only) ── */}
+            {role === 'superadmin' && onDelete && (
+                <div className="border-t border-black/5 px-6 py-4">
+                    {!isConfirmingDelete ? (
+                        <button
+                            onClick={() => setIsConfirmingDelete(true)}
+                            className="flex w-full items-center justify-center gap-2 rounded-lg border border-red-200 px-4 py-2 text-sm text-red-400 transition-colors hover:bg-red-50 hover:text-red-600 hover:border-red-300"
+                        >
+                            <Trash2 className="h-4 w-4" />
+                            Delete Lead
+                        </button>
+                    ) : (
+                        <div className="space-y-2">
+                            <p className="text-center text-xs text-red-500 font-medium">
+                                Are you sure? This cannot be undone.
+                            </p>
+                            <div className="flex gap-2">
+                                <button
+                                    onClick={() => setIsConfirmingDelete(false)}
+                                    className="flex-1 rounded-lg border border-black/10 px-3 py-2 text-sm text-[#1a1a1a]/60 transition-colors hover:bg-black/5"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={async () => {
+                                        if (!lead) return;
+                                        setIsDeleting(true);
+                                        const result = await onDelete(lead.id);
+                                        setIsDeleting(false);
+                                        if (result.error) {
+                                            toast.error(`Failed to delete: ${result.error}`);
+                                        } else {
+                                            toast.success('Lead deleted');
+                                            onClose();
+                                        }
+                                    }}
+                                    disabled={isDeleting}
+                                    className="flex-1 rounded-lg bg-red-500 px-3 py-2 text-sm font-medium text-white transition-colors hover:bg-red-600 disabled:opacity-50"
+                                >
+                                    {isDeleting ? 'Deleting…' : 'Confirm Delete'}
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </>
     );
 }

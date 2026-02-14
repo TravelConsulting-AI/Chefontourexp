@@ -152,5 +152,23 @@ export function useLeads() {
         [leads, fetchLeads]
     );
 
-    return { leads, isLoading, error, refetch: fetchLeads, updateLeadStatus, updateLead };
+    const deleteLead = useCallback(
+        async (leadId: string) => {
+            const { error: err } = await supabase
+                .from('leads')
+                .delete()
+                .eq('id', leadId);
+
+            if (err) {
+                return { error: err.message };
+            }
+
+            // Optimistically remove from local state
+            setLeads((prev) => prev.filter((l) => l.id !== leadId));
+            return { error: null };
+        },
+        []
+    );
+
+    return { leads, isLoading, error, refetch: fetchLeads, updateLeadStatus, updateLead, deleteLead };
 }

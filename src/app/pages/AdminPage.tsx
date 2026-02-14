@@ -8,7 +8,7 @@ import type { LeadStatus } from '@/lib/roles';
 
 export function AdminPage() {
     const { profile, roleLabel } = useAuth();
-    const { leads, isLoading, updateLeadStatus, updateLead, refetch } = useLeads();
+    const { leads, isLoading, updateLeadStatus, updateLead, deleteLead, refetch } = useLeads();
     const { tours, getSchedulesForTour } = useTourOptions();
     const [selectedLead, setSelectedLead] = useState<LeadWithTraveler | null>(null);
 
@@ -40,6 +40,14 @@ export function AdminPage() {
             if (updatedLead) {
                 setSelectedLead(updatedLead);
             }
+        }
+        return result;
+    };
+
+    const handleDelete = async (leadId: string) => {
+        const result = await deleteLead(leadId);
+        if (!result.error) {
+            setSelectedLead(null);
         }
         return result;
     };
@@ -122,6 +130,7 @@ export function AdminPage() {
                 onClose={() => setSelectedLead(null)}
                 onStatusChange={handleStatusChange}
                 onSave={handleSave}
+                onDelete={handleDelete}
                 tours={tours}
                 getSchedulesForTour={getSchedulesForTour}
             />
