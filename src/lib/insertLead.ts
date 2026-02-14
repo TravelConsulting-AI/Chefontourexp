@@ -109,75 +109,8 @@ export async function insertLead(payload: LeadPayload) {
         details,
     });
 
-    // ── Calendly enrichment (fire-and-forget, doesn't block lead creation) ──
-    // Fetch the lead ID separately (traveler has SELECT on own leads)
-    if (!error && calendlyLink && travelerId) {
-        (async () => {
-            try {
-                const { data: lead } = await supabase
-                    .from('leads')
-                    .select('id')
-                    .eq('traveler_id', travelerId)
-                    .eq('calendly_link', calendlyLink)
-                    .order('created_at', { ascending: false })
-                    .limit(1)
-                    .single();
-
-                if (lead?.id) {
-                    await enrichCalendlyData(lead.id, calendlyLink, details);
-                }
-            } catch (err) {
-                console.warn('Calendly enrichment failed (non-blocking):', err);
-            }
-        })();
-    }
+    // Calendly enrichment is handled server-side by the
+    // enrich_calendly_lead Postgres trigger → calendly-enrich Edge Function
 
     return { error };
-}
-
-/**
- * Calls the calendly-enrich Edge Function to fetch meeting details
- * (join URL, scheduled time, cancel/reschedule links) and updates
- * the lead's details JSON with the enriched data.
- */
-async function enrichCalendlyData(
-    leadId: string,
-    eventUri: string,
-    existingDetails: Record<string, Json>
-): Promise<void> {
-    try {
-        const { data, error: fnError } = await supabase.functions.invoke('calendly-enrich', {
-            body: { event_uri: eventUri },
-        });
-
-        if (fnError || !data) {
-            console.warn('Calendly enrichment returned error:', fnError);
-            return;
-        }
-
-        // Merge enriched Calendly data into existing details
-        const enrichedDetails: Record<string, Json> = {
-            ...existingDetails,
-            calendly_meeting: {
-                start_time: data.start_time ?? null,
-                end_time: data.end_time ?? null,
-                event_name: data.event_name ?? null,
-                status: data.status ?? null,
-                join_url: data.join_url ?? null,
-                location_type: data.location_type ?? null,
-                cancel_url: data.cancel_url ?? null,
-                reschedule_url: data.reschedule_url ?? null,
-            },
-        };
-
-        // Update the lead's calendly_link to the actual join URL if available
-        const updatePayload: Record<string, unknown> = { details: enrichedDetails };
-        if (data.join_url) {
-            updatePayload.calendly_link = data.join_url;
-        }
-
-        await supabase.from('leads').update(updatePayload).eq('id', leadId);
-    } catch (err) {
-        console.warn('Calendly enrichment error:', err);
-    }
 }
