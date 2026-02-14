@@ -1,6 +1,6 @@
 import { motion, useScroll, useTransform } from 'motion/react';
 import { useState, useEffect, useRef } from 'react';
-import { Menu, X, Phone, Mail, ChevronDown, LogOut, UserCircle } from 'lucide-react';
+import { Menu, X, Phone, Mail, ChevronDown, LogOut, UserCircle, LayoutDashboard } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import logo from '@/assets/63a59453823c55a03703a64e2bd861fe4dd295a2.png';
 import { BookingModal } from './BookingModal';
@@ -269,6 +269,14 @@ export function ChefHeader() {
                       My Account
                     </Link>
                   </DropdownMenuItem>
+                  {(role === 'superadmin' || role === 'leadership') && (
+                    <DropdownMenuItem asChild className="cursor-pointer text-white/80 focus:bg-white/10 focus:text-white">
+                      <Link to="/admin" className="flex items-center gap-2">
+                        <LayoutDashboard className="h-4 w-4" />
+                        Team Dashboard
+                      </Link>
+                    </DropdownMenuItem>
+                  )}
                   <DropdownMenuSeparator className="bg-white/10" />
                   <DropdownMenuItem
                     onClick={handleSignOut}
@@ -469,6 +477,15 @@ export function ChefHeader() {
                 >
                   My Account
                 </Link>
+                {(role === 'superadmin' || role === 'leadership') && (
+                  <Link
+                    to="/admin"
+                    onClick={() => setIsMenuOpen(false)}
+                    className="block text-sm text-white/70 transition-colors hover:text-[#D4A574]"
+                  >
+                    Team Dashboard
+                  </Link>
+                )}
                 <button
                   onClick={handleSignOut}
                   className="block text-sm text-white/50 transition-colors hover:text-white"
