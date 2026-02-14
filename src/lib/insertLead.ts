@@ -91,7 +91,9 @@ export async function insertLead(payload: LeadPayload) {
     const { data: { session } } = await supabase.auth.getSession();
     const travelerId = session?.user?.id ?? null;
 
-    const { data: insertedLead, error } = await supabase.from('leads').insert({
+    const calendlyLink = payload.calendlyLink ?? null;
+
+    const { error } = await supabase.from('leads').insert({
         // Structured columns
         traveler_id: travelerId,
         lead_type: leadType,
@@ -102,16 +104,32 @@ export async function insertLead(payload: LeadPayload) {
         fixed_date_id: payload.fixedDateId ?? null,
         custom_departure_date: payload.customDepartureDate ?? null,
         custom_departure_date_end: payload.customDepartureDateEnd ?? null,
-        calendly_link: payload.calendlyLink ?? null,
+        calendly_link: calendlyLink,
         // JSONB overflow
         details,
-    }).select('id').single();
+    });
 
     // ── Calendly enrichment (fire-and-forget, doesn't block lead creation) ──
-    if (!error && insertedLead?.id && payload.calendlyLink) {
-        enrichCalendlyData(insertedLead.id, payload.calendlyLink, details).catch((err) => {
-            console.warn('Calendly enrichment failed (non-blocking):', err);
-        });
+    // Fetch the lead ID separately (traveler has SELECT on own leads)
+    if (!error && calendlyLink && travelerId) {
+        (async () => {
+            try {
+                const { data: lead } = await supabase
+                    .from('leads')
+                    .select('id')
+                    .eq('traveler_id', travelerId)
+                    .eq('calendly_link', calendlyLink)
+                    .order('created_at', { ascending: false })
+                    .limit(1)
+                    .single();
+
+                if (lead?.id) {
+                    await enrichCalendlyData(lead.id, calendlyLink, details);
+                }
+            } catch (err) {
+                console.warn('Calendly enrichment failed (non-blocking):', err);
+            }
+        })();
     }
 
     return { error };
